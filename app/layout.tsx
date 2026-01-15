@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geologica } from "next/font/google";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
-
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+const geologica = Geologica({
+  variable: "--font-geologica",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   // title: "Create Next App",
@@ -24,10 +21,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geologica.className} antialiased`}>
         {children}
+        <ToastContainer
+          position="bottom-center"
+          autoClose={3000}
+          hideProgressBar
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+          toastStyle={{ backgroundColor: 'white', color: 'black' }}
+        />
       </body>
     </html>
   );

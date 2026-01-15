@@ -7,13 +7,18 @@ import { useState, useRef, useEffect } from 'react'
 interface DropdownProps {
     items: string[]
     placeholder?: string
+    value?: string
     onSelect?: (item: string) => void
 }
 
-function Dropdown({ items, placeholder = "What do you love about your partner?", onSelect }: DropdownProps) {
+function Dropdown({ items, placeholder = "What do you love about your partner?", value = '', onSelect }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [selectedValue, setSelectedValue] = useState('')
+    const [selectedValue, setSelectedValue] = useState(value)
     const dropdownRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        setSelectedValue(value)
+    }, [value])
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -73,7 +78,7 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
                         <div
                             key={index}
                             onClick={() => handleSelect(item)}
-                            className="px-5 pl-2 py-3 text-left text-black text-sm cursor-pointer transition-colors hover:bg-[#FDD5D5] hover:text-primary! hover:border-l-4 hover:border-l-primary"
+                            className="px-5 pl-2 py-3 text-left text-black text-sm cursor-pointer transition-colors hover:bg-[#FFD9DB] hover:text-primary! hover:border-l-4 hover:border-l-primary"
                         >
                             {item}
                         </div>
