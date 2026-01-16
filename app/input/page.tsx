@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 
 
 const API_BASE_URL = 'https://api.closeuplovetunes.in/api/v1'
+// const API_BASE_URL = 'http://localhost:8000/api/v1'
 
 function Input() {
   const router = useRouter()
@@ -39,7 +40,7 @@ function Input() {
   // Check screen height
   useEffect(() => {
     const checkScreenHeight = () => {
-      setIsShortScreen(window.innerHeight < 700)
+      setIsShortScreen(window.innerHeight < 730)
     }
 
     checkScreenHeight()
@@ -128,7 +129,7 @@ function Input() {
       formData.append('gender', voice === 'Male voice' ? 'male' : 'female')
       formData.append('attribute_love', loveAbout)
       formData.append('relationship_status', relationship)
-      formData.append('vibe', vibe)
+      formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'pop')
       formData.append('photo', capturedPhotoFile)
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
@@ -285,7 +286,7 @@ function Input() {
 
     // Animate progress bar over 2 seconds
     const startTime = Date.now()
-    const duration = 2000
+    const duration = 4000
 
     const animateProgress = () => {
       const elapsed = Date.now() - startTime
@@ -465,7 +466,7 @@ function Input() {
       <Image src="/toothpaste.png" alt="" width={300} height={300} className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
 
       {/* Scrollable content area */}
-      <div className="flex-1 overflow-y-auto flex flex-col items-center px-4 pt-8 pb-10">
+      <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center px-4 pt-8 pb-10">
         {/* Logo and disc - row on short screens, column on taller screens - animate from top */}
         <div className={`flex items-center transition-all duration-700 ease-out ${isShortScreen ? 'flex-row gap-4 mb-3' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
           <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isShortScreen ? 'size-20' : 'size-32 md:size-36'} />
@@ -487,14 +488,14 @@ function Input() {
           />
 
           <Dropdown
-            items={['Dating', 'Married', 'Long-Distance Relationship', 'Crushing', 'Situationship', 'Nanoship']}
+            items={[ 'Dating','Married', 'Long-Distance', 'Crushing', 'Situationship', 'Nanoship']}
             placeholder="How would you describe your relationship?"
             value={relationship}
             onSelect={(item) => setRelationship(item)}
           />
 
           <Dropdown
-            items={['Romance', 'Rock', 'Rap', 'Pop', 'Jazz', 'Classical', 'Electronic', 'Country', 'R&B']}
+            items={['Rock', 'Rap', 'Pop']}
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
@@ -510,7 +511,7 @@ function Input() {
       )}
 
       {showMobileInput && !showOtpScreen && (
-        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'} `}>
           {/* Upload photo box */}
           {capturedPhoto ? (
             <div
@@ -518,7 +519,7 @@ function Input() {
                 console.log('Retake photo clicked')
                 openPreCamera()
               }}
-              className="w-24 h-24 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
+              className="w-24 h-20 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
             >
               <img src={capturedPhoto} alt="Captured" className="w-full h-full object-cover" />
             </div>
@@ -528,7 +529,7 @@ function Input() {
                 console.log('Upload box clicked')
                 openPreCamera()
               }}
-              className="w-[279px] h-[118px] rounded-[11px] border border-dashed border-white flex items-center justify-center gap-3 mb-4 cursor-pointer"
+              className="w-[279px] h-[100px] backdrop-blur-xs rounded-[11px] border border-dashed border-white flex items-center justify-center gap-3 mb-4 cursor-pointer"
               style={{ borderWidth: '0.94px' }}
             >
               <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
@@ -569,7 +570,7 @@ function Input() {
       )}
 
       {showOtpScreen && (
-        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <div className={`flex flex-col  items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           {/* OTP input */}
           <div className="relative self-stretch">
             <div className="relative px-5 py-2.5 overflow-hidden">
@@ -627,12 +628,12 @@ function Input() {
 
       {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
       {showMobileInput && !showOtpScreen && (
-        <label className={`flex items-start gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <label className={`flex items-start  gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <input
             type="checkbox"
             checked={agreedToTerms}
             onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-primary"
+            className="mt-1 w-4 h-4 accent-white"
           />
           <span className="text-white text-xs leading-relaxed">
             I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review <em>before</em> video generation.{' '}
@@ -645,7 +646,7 @@ function Input() {
       <button
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
         disabled={isSubmitting || isVerifyingOtp}
-        className={`group absolute bottom-8 px-8 flex items-stretch w-full outline-none mt-6 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}
+        className={`group absolute bottom-8 px-10 flex items-stretch w-full outline-none mt-6 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}
       >
         {/* Main button body */}
         <div className={`relative w-full rounded-lg border-4 border-r-0 border-red-400 py-2 md:py-3 flex items-center justify-center gap-8 transition-colors ${
@@ -734,7 +735,7 @@ function Input() {
 
       {/* Camera Modal */}
       {showCamera && (
-        <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
+        <div className="fixed inset-0 bg-black z-50  flex flex-col items-center justify-center">
           {/* Close button */}
           <button
             onClick={closeCamera}

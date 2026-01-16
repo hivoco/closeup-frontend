@@ -73,7 +73,7 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
 
             {/* Dropdown menu */}
             {isOpen && (
-                <div className="absolute left-5 w-full bg-white rounded-b-lg shadow-lg z-20 max-h-64 max-w-4/5 overflow-y-auto">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-full bg-white rounded-lg shadow-lg z-50 max-h-64 max-w-4/5 overflow-y-auto">
                     {items.map((item, index) => (
                         <div
                             key={index}
