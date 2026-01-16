@@ -7,7 +7,7 @@ import Dropdown from '../components/Dropdown'
 import { useRouter } from 'next/navigation'
 
 
-const API_BASE_URL = 'http://localhost:8000/api/v1'
+const API_BASE_URL = 'https://api.closeuplovetunes.in/api/v1'
 
 function Input() {
   const router = useRouter()
