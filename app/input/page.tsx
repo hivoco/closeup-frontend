@@ -519,7 +519,7 @@ function Input() {
                 console.log('Retake photo clicked')
                 openPreCamera()
               }}
-              className="w-24 h-20 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
+              className="w-24 h-24 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
             >
               <img src={capturedPhoto} alt="Captured" className="w-full h-full object-cover" />
             </div>
@@ -628,12 +628,12 @@ function Input() {
 
       {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
       {showMobileInput && !showOtpScreen && (
-        <label className={`flex items-start  gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <label className={`flex items-start   gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <input
             type="checkbox"
             checked={agreedToTerms}
             onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-white"
+            className="mt-1 w-4 h-4 accent-black "
           />
           <span className="text-white text-xs leading-relaxed">
             I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review <em>before</em> video generation.{' '}
