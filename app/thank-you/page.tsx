@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+
 import Lottie from 'lottie-react'
 
 import animationData from '@/public/thanks-mb.json'
@@ -12,9 +12,6 @@ import animationDataTB from '@/public/thanks-tb.json'
 type ScreenType = 'mobile' | 'tablet' | 'desktop'
 
 function ThanksYou() {
-  const router = useRouter()
-
-  const [showButton, setShowButton] = useState(false)
   const [screenType, setScreenType] = useState<ScreenType>('mobile')
 
   useEffect(() => {
@@ -33,12 +30,7 @@ function ThanksYou() {
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
 
-    const timer = setTimeout(() => {
-      setShowButton(true)
-    }, 1500)
-
     return () => {
-      clearTimeout(timer)
       window.removeEventListener('resize', checkScreenSize)
     }
   }, [])
@@ -51,10 +43,18 @@ function ThanksYou() {
       : animationData
 
   return (
-    <div className="text-white h-screen flex flex-col items-center justify-center w-full mx-auto overflow-hidden">
-      {/* Lottie Animation */}
-      <div className="w-full h-full object-contain">
-        <Lottie animationData={animation} loop={false} autoplay />
+    <div className="text-white h-svh w-full mx-auto overflow-hidden relative">
+      {/* Lottie Animation - full screen */}
+      <div className="absolute inset-0 w-full h-full">
+        <Lottie
+          animationData={animation}
+          loop={false}
+          autoplay
+          style={{ width: '100%', height: '100%' }}
+          rendererSettings={{
+            preserveAspectRatio: 'xMidYMid slice'
+          }}
+        />
       </div>
     </div>
   )

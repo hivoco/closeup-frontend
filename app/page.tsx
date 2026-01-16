@@ -16,10 +16,12 @@ function Home() {
 
   const [showButton, setShowButton] = useState(false)
   const [screenType, setScreenType] = useState<ScreenType>('mobile')
+  const [isShortScreen, setIsShortScreen] = useState(false)
 
   useEffect(() => {
     const checkScreenSize = () => {
       const width = window.innerWidth
+      const height = window.innerHeight
 
       if (width >= 1200) {
         setScreenType('desktop')
@@ -28,6 +30,9 @@ function Home() {
       } else {
         setScreenType('mobile')
       }
+
+      // Check for short screens (like iPhone SE, older iPhones)
+      setIsShortScreen(height < 700)
     }
 
     checkScreenSize()
@@ -54,8 +59,13 @@ function Home() {
       ? animationDataTB // swap with tablet animation if needed
       : animationData
 
-  const buttonPosition =
-    showButton
+  // For short screens, use relative positioning with scrollable layout
+  // For taller screens, use absolute positioning
+  const buttonPosition = isShortScreen
+    ? showButton
+      ? 'opacity-100'
+      : 'opacity-0'
+    : showButton
       ? screenType === 'desktop'
         ? 'bottom-10 opacity-100'
         : screenType === 'tablet'
@@ -64,16 +74,24 @@ function Home() {
       : '-bottom-20 opacity-0'
 
   return (
-    <div className="text-white h-screen flex flex-col items-center justify-center w-full mx-auto overflow-hidden">
-      {/* Lottie Animation */}
-      <div className="w-full h-full object-contain">
-        <Lottie animationData={animation} loop={false} autoplay />
+    <div className="text-white h-svh w-full mx-auto overflow-hidden relative">
+      {/* Lottie Animation - full screen */}
+      <div className={`absolute inset-0 w-full h-full `}>
+        <Lottie
+          animationData={animation}
+          loop={false}
+          autoplay
+          style={{ width: '100%', height: '100%' }}
+          rendererSettings={{
+            preserveAspectRatio: 'xMidYMid slice'
+          }}
+        />
       </div>
 
       {/* Start Button */}
       <button
         onClick={handleStart}
-        className={`absolute left-1/2 -translate-x-1/2 group flex items-stretch w-64 outline-none transition-all duration-700 ease-out ${buttonPosition}`}
+        className={`absolute left-1/2 -translate-x-1/2 bottom-10 group flex items-stretch w-64 outline-none transition-all duration-700 ease-out ${buttonPosition}`}
       >
         <div className="relative w-full bg-[#D9D9D9] rounded-lg border-4 border-r-0 border-red-200 py-2 md:py-3 flex items-center justify-center gap-8 transition-transform">
           <span className="text-xl font-semibold text-[#BE1E2D] text-center">

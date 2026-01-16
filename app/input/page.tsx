@@ -4,10 +4,13 @@ import Image from 'next/image'
 import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Dropdown from '../components/Dropdown'
+import { useRouter } from 'next/navigation'
+
 
 const API_BASE_URL = 'http://localhost:8000/api/v1'
 
 function Input() {
+  const router = useRouter()
   const [loveAbout, setLoveAbout] = useState('')
   const [relationship, setRelationship] = useState('')
   const [vibe, setVibe] = useState('')
@@ -19,12 +22,65 @@ function Input() {
   const [showPreCamera, setShowPreCamera] = useState(false)
   const [preCameraProgress, setPreCameraProgress] = useState(0)
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [capturedPhotoFile, setCapturedPhotoFile] = useState<File | null>(null)
   const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false)
   const [showOtpScreen, setShowOtpScreen] = useState(false)
   const [otpCode, setOtpCode] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
+  const [isResendingOtp, setIsResendingOtp] = useState(false)
+  const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
+  const [jobId, setJobId] = useState<number | null>(null)
+  const [isShortScreen, setIsShortScreen] = useState(false)
+  const [pageLoaded, setPageLoaded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+
+  // Check screen height
+  useEffect(() => {
+    const checkScreenHeight = () => {
+      setIsShortScreen(window.innerHeight < 700)
+    }
+
+    checkScreenHeight()
+    window.addEventListener('resize', checkScreenHeight)
+
+    return () => window.removeEventListener('resize', checkScreenHeight)
+  }, [])
+
+  // Trigger entrance animations on mount
+  useEffect(() => {
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(() => {
+      setPageLoaded(true)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // OTP countdown timer
+  useEffect(() => {
+    if (otpTimer <= 0) return
+
+    const interval = setInterval(() => {
+      setOtpTimer((prev) => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [otpTimer])
+
+  // Start timer when OTP screen is shown
+  useEffect(() => {
+    if (showOtpScreen) {
+      setOtpTimer(300) // 5 minutes = 300 seconds
+    }
+  }, [showOtpScreen])
+
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
 
   const allFieldsFilled = loveAbout && relationship && vibe && voice
   const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms
@@ -49,8 +105,9 @@ function Input() {
     }
   }
 
-  const handleGetVerificationCode = () => {
-    if (!capturedPhoto) {
+  // Submit video form and send OTP
+  const handleGetVerificationCode = async () => {
+    if (!capturedPhoto || !capturedPhotoFile) {
       toast.error('Please upload your photo')
       return
     }
@@ -62,16 +119,140 @@ function Input() {
       toast.error('Please accept the terms and conditions')
       return
     }
-    console.log('Getting verification code for:', mobileNumber)
-    setShowOtpScreen(true)
+
+    setIsSubmitting(true)
+
+    try {
+      const formData = new FormData()
+      formData.append('mobile_number', mobileNumber)
+      formData.append('gender', voice === 'Male voice' ? 'male' : 'female')
+      formData.append('attribute_love', loveAbout)
+      formData.append('relationship_status', relationship)
+      formData.append('vibe', vibe)
+      formData.append('photo', capturedPhotoFile)
+
+      const response = await fetch(`${API_BASE_URL}/video/submit`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          toast.error('You have reached the maximum limit of 3 videos')
+        } else {
+          toast.error(data.detail || 'Failed to submit. Please try again.')
+        }
+        return
+      }
+
+      // Save job ID for later
+      if (data.job_id) {
+        setJobId(data.job_id)
+      }
+
+      if (data.status === 'otp_sent') {
+        toast.success('OTP sent to your WhatsApp number!')
+        setShowOtpScreen(true)
+      } else if (data.status === 'video_created') {
+        toast.success('Your video is being processed!')
+        router.push('/thank-you')
+      } else if (data.status === 'pending') {
+        toast.info(data.message || 'Your previous video is still being processed.')
+      }
+    } catch (error) {
+      console.error('Submit error:', error)
+      toast.error('Something went wrong. Please try again.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleSubmitOtp = () => {
+  // Verify OTP
+  const handleSubmitOtp = async () => {
     if (otpCode.length !== 6) {
       toast.error('Please enter the 6-digit OTP code')
       return
     }
-    console.log('Submitting:', { loveAbout, relationship, vibe, voice, mobileNumber, capturedPhoto, otpCode })
+
+    setIsVerifyingOtp(true)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mobile_number: mobileNumber,
+          otp: otpCode,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error(data.detail || 'Invalid OTP. Please try again.')
+        return
+      }
+
+      if (data.status === 'verified') {
+        toast.success('OTP verified successfully!')
+        if (data.job_id) {
+          setJobId(data.job_id)
+        }
+        router.push('/thank-you')
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error)
+      toast.error('Failed to verify OTP. Please try again.')
+    } finally {
+      setIsVerifyingOtp(false)
+    }
+  }
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    if (otpTimer > 0) {
+      toast.info(`Please wait ${formatTime(otpTimer)} before resending`)
+      return
+    }
+
+    setIsResendingOtp(true)
+    setOtpCode('')
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mobile_number: mobileNumber,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.detail?.includes('still valid')) {
+          // Extract remaining seconds from error if available
+          toast.info(data.detail || 'OTP is still valid. Please check your WhatsApp.')
+        } else {
+          toast.error(data.detail || 'Failed to resend OTP. Please try again.')
+        }
+        return
+      }
+
+      toast.success('New OTP sent successfully!')
+      setOtpTimer(data.expires_in_minutes ? data.expires_in_minutes * 60 : 300)
+    } catch (error) {
+      console.error('Resend OTP error:', error)
+      toast.error('Failed to resend OTP. Please try again.')
+    } finally {
+      setIsResendingOtp(false)
+    }
   }
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -236,21 +417,20 @@ function Input() {
 
         // Convert to file for API
         const file = dataURLtoFile(photoData, 'captured-photo.jpg')
-        setPhotoFile(file)
 
         // Start verification
         setIsVerifyingPhoto(true)
 
         try {
-          // const isValid = await verifyPhoto(file)
-          const isValid = true
+          const result = await verifyPhoto(file)
 
-          if (isValid) {
+          if (result.valid) {
             setCapturedPhoto(photoData)
+            setCapturedPhotoFile(file)
             closeCamera()
             toast.success('Photo verified successfully!')
           } else {
-            toast.error('No face detected. Please try again.')
+            toast.error(`${result.message}${result.reason ? ` - ${result.reason}` : ''}`)
           }
         } catch (error) {
           toast.error('Photo verification failed. Please try again.')
@@ -261,8 +441,10 @@ function Input() {
     }
   }
 
+  
+
   return (
-    <div className="min-h-screen flex flex-col max-w-sm mx-auto  relative">
+    <div className="min-h-svh flex flex-col max-w-sm mx-auto  relative">
 
       {/* Back button - visible on mobile input screen and OTP screen */}
       {(showMobileInput || showOtpScreen) && (
@@ -275,25 +457,28 @@ function Input() {
         </button>
       )}
 
-      {/* Decorative images - fixed position */}
-      <Image src="/heart.png" alt="" width={40} height={40} className="fixed top-0 left-0 pointer-events-none" />
-      <Image src="/double-heart.png" alt="" width={40} height={40} className="fixed bottom-50 left-40 pointer-events-none" />
-      <Image src="/heart_scribble.png" alt="" width={40} height={40} className="fixed top-25 right-20 pointer-events-none" />
-      <Image src="/double_star.png" alt="" width={40} height={40} className="fixed bottom-0 right-0 pointer-events-none" />
-      <Image src="/toothpaste.png" alt="" width={300} height={300} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+      {/* Decorative images - fixed position with fade in animation */}
+      <Image src="/heart.png" alt="" width={80} height={40} className={`fixed top-0 left-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <Image src="/double-heart.png" alt="" width={90} height={40} className={`fixed bottom-50 left-40 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <Image src="/heart_scribble.png" alt="" width={100} height={40} className={`fixed top-25 right-10 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <Image src="/double_star.png" alt="" width={82} height={40} className={`fixed bottom-0 right-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <Image src="/toothpaste.png" alt="" width={300} height={300} className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
 
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto flex flex-col items-center px-4 pt-8 pb-10">
-        <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className="size-32 md:size-36" />
-        <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className="mb-3 " />
+        {/* Logo and disc - row on short screens, column on taller screens - animate from top */}
+        <div className={`flex items-center transition-all duration-700 ease-out ${isShortScreen ? 'flex-row gap-4 mb-3' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
+          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isShortScreen ? 'size-20' : 'size-32 md:size-36'} />
+          <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className={isShortScreen ? 'size-20' : 'mb-3'} />
+        </div>
 
 
-      <h1 className="text-white text-xl font-light text-center mb-4">
+      <h1 className={`text-white text-xl font-light text-center mb-4 transition-all duration-700 ease-out delay-100 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
         Drop Your Love Vibe
       </h1>
 
       {!showMobileInput && (
-        <>
+        <div className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <Dropdown
             items={['Smile', 'Eyes', 'Hair', 'Face', 'Vibe', 'Sense of Humor', 'Heart']}
             placeholder="What do you love about your partner?"
@@ -321,11 +506,11 @@ function Input() {
             value={voice}
             onSelect={(item) => setVoice(item)}
           />
-        </>
+        </div>
       )}
 
       {showMobileInput && !showOtpScreen && (
-        <>
+        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           {/* Upload photo box */}
           {capturedPhoto ? (
             <div
@@ -346,8 +531,8 @@ function Input() {
               className="w-[279px] h-[118px] rounded-[11px] border border-dashed border-white flex items-center justify-center gap-3 mb-4 cursor-pointer"
               style={{ borderWidth: '0.94px' }}
             >
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
-                <Image src="/camera.png" alt="Camera" width={24} height={24} />
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <Image src="/camera.png" alt="Camera" width={32} height={32} />
               </div>
               <span className="text-white text-sm">Upload your photo</span>
             </div>
@@ -380,11 +565,11 @@ function Input() {
             </div>
             <span className="text-white text-xs leading-relaxed px-3">*We'll send your video to this number.</span>
           </div>
-        </>
+        </div>
       )}
 
       {showOtpScreen && (
-        <>
+        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           {/* OTP input */}
           <div className="relative self-stretch">
             <div className="relative px-5 py-2.5 overflow-hidden">
@@ -409,12 +594,40 @@ function Input() {
             </div>
             <span className="text-white text-xs leading-relaxed px-3">*Enter the verification code sent to +91 {mobileNumber}</span>
           </div>
-        </>
+
+          {/* Timer and Resend OTP */}
+          <div className="flex flex-col items-center mt-4 gap-2">
+            {otpTimer > 0 ? (
+              <span className="text-white text-sm">
+                OTP expires in: <span className="font-semibold">{formatTime(otpTimer)}</span>
+              </span>
+            ) : (
+              <span className="text-red-300 text-sm font-semibold">OTP has expired</span>
+            )}
+
+            <button
+              onClick={handleResendOtp}
+              disabled={isResendingOtp || otpTimer > 0}
+              className={`text-sm underline ${
+                otpTimer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-white hover:text-gray-200'
+              }`}
+            >
+              {isResendingOtp ? (
+                <span className="flex items-center gap-1">
+                  <Loader2 size={14} className="animate-spin" />
+                  Resending...
+                </span>
+              ) : (
+                otpTimer > 0 ? `Resend OTP` : 'Resend OTP'
+              )}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
       {showMobileInput && !showOtpScreen && (
-        <label className="flex items-start gap-2 self-stretch mt-4 cursor-pointer px-3">
+        <label className={`flex items-start gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <input
             type="checkbox"
             checked={agreedToTerms}
@@ -428,34 +641,42 @@ function Input() {
         </label>
       )}
 
-      {/* Button inside scroll area */}
+      {/* Button inside scroll area - animate from bottom */}
       <button
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
-        className="group absolute bottom-8 px-8 flex items-stretch w-full outline-none mt-6"
+        disabled={isSubmitting || isVerifyingOtp}
+        className={`group absolute bottom-8 px-8 flex items-stretch w-full outline-none mt-6 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}
       >
         {/* Main button body */}
         <div className={`relative w-full rounded-lg border-4 border-r-0 border-red-400 py-2 md:py-3 flex items-center justify-center gap-8 transition-colors ${
           showOtpScreen
-            ? (canSubmitOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
+            ? (canSubmitOtp && !isVerifyingOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
             : showMobileInput
-              ? (canGetVerificationCode ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
+              ? (canGetVerificationCode && !isSubmitting ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
               : (allFieldsFilled ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
         }`}>
-          <span className="text-xl font-semibold text-[#BE1E2D] text-center">
-            {showOtpScreen ? 'Submit →' : (showMobileInput ? 'Get Verification Code →' : 'Next →')}
+          <span className="text-xl  font-semibold text-[#BE1E2D]  text-center flex items-center gap-2">
+            {isSubmitting || isVerifyingOtp ? (
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                {isVerifyingOtp ? 'Verifying...' : 'Submitting...'}
+              </>
+            ) : (
+              showOtpScreen ? 'Submit →' : (showMobileInput ? 'Get Verification Code →' : 'Next →')
+            )}
           </span>
         </div>
 
         {/* Arrow point - 3% taller than button */}
-        <div className="relative flex items-stretch -ml-2 -my-[.5%]">
+        <div className="relative flex items-stretch -ml-2 -my-[.1%] ">
           {/* Outer border layer */}
-          <div className="w-15 h- bg-red-400 relative" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
+          <div className="w-14 bg-red-400 relative" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
           {/* Inner white layer - no border on base, thicker equal borders on diagonals */}
           <div className={`absolute inset-0 ${
             showOtpScreen
-              ? (canSubmitOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
+              ? (canSubmitOtp && !isVerifyingOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
               : showMobileInput
-                ? (canGetVerificationCode ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
+                ? (canGetVerificationCode && !isSubmitting ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
                 : (allFieldsFilled ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
           } transition-colors`} style={{ clipPath: 'polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))' }}></div>
         </div>
@@ -464,9 +685,9 @@ function Input() {
 
       {/* Pre-Camera Instruction Modal */}
       {showPreCamera && (
-        <div className="fixed inset-0 bg-black   z-50 flex flex-col">
+        <div className="fixed inset-0 bg-black   z-50 flex flex-col px-6">
           {/* Progress bar at top */}
-          <div className="w-md  mx-auto h-1.5 mt-10 bg-gray-700 rounded-full">
+          <div className="w-full md:w-md  mx-auto h-1.5 mt-10 bg-gray-700 rounded-full">
             <div
               className="h-full bg-white rounded-full"
               style={{ width: `${preCameraProgress}%` }}
@@ -474,7 +695,7 @@ function Input() {
           </div>
 
           {/* Centered content */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="flex-1 flex flex-col items-center justify-center">
             {/* 4 Images in 2x2 grid */}
             <div className="grid grid-cols-2 gap-4 mb-8">
               {[1, 2, 3, 4].map((num) => (
@@ -517,7 +738,7 @@ function Input() {
           {/* Close button */}
           <button
             onClick={closeCamera}
-            className="absolute top-4 right-4 text-white"
+            className="absolute top-4 right-4  text-white z-20"
             disabled={isVerifyingPhoto}
           >
             <X size={32} />
