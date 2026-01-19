@@ -425,8 +425,8 @@ function Input() {
         setIsVerifyingPhoto(true)
 
         try {
-          // const result = await verifyPhoto(file)
-          const result = {"valid": true, "message": "Photo is valid", "reason": ""} // Mocked for testing
+          const result = await verifyPhoto(file)
+          // const result = {"valid": true, "message": "Photo is valid", "reason": ""}
 
           if (result.valid) {
             setCapturedPhoto(photoData)
