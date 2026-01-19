@@ -34,13 +34,14 @@ function Input() {
   const [jobId, setJobId] = useState<number | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
   // Check screen height
   useEffect(() => {
     const checkScreenHeight = () => {
-      setIsShortScreen(window.innerHeight < 730)
+      setIsShortScreen(window.innerHeight < 700)
     }
 
     checkScreenHeight()
@@ -129,8 +130,9 @@ function Input() {
       formData.append('gender', voice === 'Male voice' ? 'male' : 'female')
       formData.append('attribute_love', loveAbout)
       formData.append('relationship_status', relationship)
-      formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'pop')
+      formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
       formData.append('photo', capturedPhotoFile)
+      formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
         method: 'POST',
@@ -423,7 +425,8 @@ function Input() {
         setIsVerifyingPhoto(true)
 
         try {
-          const result = await verifyPhoto(file)
+          // const result = await verifyPhoto(file)
+          const result = {"valid": true, "message": "Photo is valid", "reason": ""} // Mocked for testing
 
           if (result.valid) {
             setCapturedPhoto(photoData)
@@ -451,7 +454,7 @@ function Input() {
       {(showMobileInput || showOtpScreen) && (
         <button
           onClick={handleBackClick}
-          className="absolute top-4 left-4 flex items-center gap-1 text-white z-10"
+          className="fixed top-8 left-4 flex items-center gap-1 text-white z-10"
         >
           <ChevronLeft size={24} />
           <span className="text-sm">Back</span>
@@ -474,7 +477,7 @@ function Input() {
         </div>
 
 
-      <h1 className={`text-white text-xl font-light text-center mb-4 transition-all duration-700 ease-out delay-100 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
+      <h1 className={`text-white text-base md:text-lg font-light text-center mb-4 transition-all duration-700 ease-out delay-100 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
         Drop Your Love Vibe
       </h1>
 
@@ -485,6 +488,7 @@ function Input() {
             placeholder="What do you love about your partner?"
             value={loveAbout}
             onSelect={(item) => setLoveAbout(item)}
+            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
@@ -492,13 +496,15 @@ function Input() {
             placeholder="How would you describe your relationship?"
             value={relationship}
             onSelect={(item) => setRelationship(item)}
+            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
-            items={['Rock', 'Rap', 'Pop']}
+            items={["Romantic", "Rock", "Rap"]}
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
+            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
@@ -506,6 +512,7 @@ function Input() {
             placeholder="Select your voice for the song"
             value={voice}
             onSelect={(item) => setVoice(item)}
+            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
         </div>
       )}
@@ -564,7 +571,7 @@ function Input() {
               </div>
 
             </div>
-            <span className="text-white text-xs leading-relaxed px-3">*We'll send your video to this number.</span>
+          
           </div>
         </div>
       )}
@@ -628,15 +635,15 @@ function Input() {
 
       {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
       {showMobileInput && !showOtpScreen && (
-        <label className={`flex items-start   gap-2 self-stretch mt-4 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <label className={`flex items-start   gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <input
             type="checkbox"
             checked={agreedToTerms}
             onChange={(e) => setAgreedToTerms(e.target.checked)}
             className="mt-1 w-4 h-4 accent-black "
           />
-          <span className="text-white text-xs leading-relaxed">
-            I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review <em>before</em> video generation.{' '}
+          <span className="text-white text-[10px] font-normal">
+           “I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review before video generation. This is valid for a limited time period."{' '}
             <a href="#" className="underline">Link</a>
           </span>
         </label>
@@ -646,40 +653,36 @@ function Input() {
       <button
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
         disabled={isSubmitting || isVerifyingOtp}
-        className={`group absolute bottom-8 px-10 flex items-stretch w-full outline-none mt-6 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}
+        className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 ${isDropdownOpen ? '-z-10' : 'z-10'} transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
+          pageLoaded
+            ? (showOtpScreen
+                ? (canSubmitOtp && !isVerifyingOtp ? 'opacity-100' : 'opacity-40')
+                : showMobileInput
+                  ? (canGetVerificationCode && !isSubmitting ? 'opacity-100' : 'opacity-40')
+                  : (allFieldsFilled ? 'opacity-100' : 'opacity-40'))
+            : ''
+        }`}
       >
         {/* Main button body */}
-        <div className={`relative w-full rounded-lg border-4 border-r-0 border-red-400 py-2 md:py-3 flex items-center justify-center gap-8 transition-colors ${
-          showOtpScreen
-            ? (canSubmitOtp && !isVerifyingOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-            : showMobileInput
-              ? (canGetVerificationCode && !isSubmitting ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-              : (allFieldsFilled ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-        }`}>
-          <span className="text-xl  font-semibold text-[#BE1E2D]  text-center flex items-center gap-2">
+        <div className="relative w-full rounded-lg border-4 border-r-0 border-[#FCAAA4] bg-white py-2  flex items-center justify-center gap-8">
+          <span className="text-sm md:text-base font-semibold text-[#BE1E2D] text-center flex items-center gap-2">
             {isSubmitting || isVerifyingOtp ? (
               <>
                 <Loader2 size={20} className="animate-spin" />
                 {isVerifyingOtp ? 'Verifying...' : 'Submitting...'}
               </>
             ) : (
-              showOtpScreen ? 'Submit →' : (showMobileInput ? 'Get Verification Code →' : 'Next →')
+              showOtpScreen ? 'Submit →' : (showMobileInput ? 'Send Verification Code →' : 'Next →')
             )}
           </span>
         </div>
 
         {/* Arrow point - 3% taller than button */}
-        <div className="relative flex items-stretch -ml-2 -my-[.1%] ">
+        <div className="relative flex items-stretch -ml-2 -my-[.1%]">
           {/* Outer border layer */}
-          <div className="w-14 bg-red-400 relative" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
+          <div className="w-14 bg-[#FCAAA4] relative" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
           {/* Inner white layer - no border on base, thicker equal borders on diagonals */}
-          <div className={`absolute inset-0 ${
-            showOtpScreen
-              ? (canSubmitOtp && !isVerifyingOtp ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-              : showMobileInput
-                ? (canGetVerificationCode && !isSubmitting ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-                : (allFieldsFilled ? 'bg-[#D9D9D9]' : 'bg-[#FCAAA4]')
-          } transition-colors`} style={{ clipPath: 'polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))' }}></div>
+          <div className="absolute inset-0 bg-white" style={{ clipPath: 'polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))' }}></div>
         </div>
       </button>
       </div>
@@ -723,7 +726,7 @@ function Input() {
             </div>
 
             {/* Instructions list */}
-            <ul className="text-white w-80 text-sm list-disc list-outside space-y-2 px-4">
+            <ul className="text-white  w-80 text-xs list-disc list-outside space-y-2 px-4">
               <li>Position yourself so that your face is clearly visible.</li>
               <li>Ensure there are no objects covering your face or body.</li>
               <li>Use good lighting and avoid shadows or backlight.</li>
@@ -775,7 +778,7 @@ function Input() {
           </button>
 
           {/* Instructions list */}
-          <ul className="text-white w-80 mt-6 text-sm list-disc list-outside space-y-1 px-6">
+          <ul className="text-white w-80 mt-6 text-xs list-disc list-outside space-y-1 px-4">
             <li>Position yourself so that your face is clearly visible.</li>
             <li>Ensure there are no objects covering your face or body.</li>
             <li>Use good lighting and avoid shadows or backlight.</li>

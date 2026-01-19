@@ -9,9 +9,10 @@ interface DropdownProps {
     placeholder?: string
     value?: string
     onSelect?: (item: string) => void
+    onOpenChange?: (isOpen: boolean) => void
 }
 
-function Dropdown({ items, placeholder = "What do you love about your partner?", value = '', onSelect }: DropdownProps) {
+function Dropdown({ items, placeholder = "What do you love about your partner?", value = '', onSelect, onOpenChange }: DropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [selectedValue, setSelectedValue] = useState(value)
     const dropdownRef = useRef<HTMLDivElement>(null)
@@ -24,25 +25,33 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
         function handleClickOutside(event: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setIsOpen(false)
+                onOpenChange?.(false)
             }
         }
 
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
+    }, [onOpenChange])
+
+    const handleToggle = () => {
+        const newState = !isOpen
+        setIsOpen(newState)
+        onOpenChange?.(newState)
+    }
 
     const handleSelect = (item: string) => {
         setSelectedValue(item)
         setIsOpen(false)
+        onOpenChange?.(false)
         onSelect?.(item)
     }
 
     return (
-        <div className="relative max-w- self-stretch " ref={dropdownRef}>
+        <div className={`relative max-w- self-stretch ${isOpen ? 'z-100' : ''}`} ref={dropdownRef}>
             {/* Main dropdown button */}
             <div
-                className="relative px-5 py-2.5 overflow-hidden cursor-pointer"
-                onClick={() => setIsOpen(!isOpen)}
+                className="relative px-5 py-2.5 overflow-hidden cursor-pointer z-50"
+                onClick={handleToggle}
             >
                 {/* Texture background */}
                 <Image
@@ -56,7 +65,7 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
 
                 {/* Display field */}
                 <div className="relative z-10">
-                    <div className="w-full px-0.5 py-3 text-sm text-primary">
+                    <div className="w-full px-0.5 py-3 text-[11px] md:text-sm text-primary">
                         {selectedValue || placeholder}
                     </div>
 
@@ -71,9 +80,9 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
                 </div>
             </div>
 
-            {/* Dropdown menu */}
+            {/* Dropdown menu - always opens below */}
             {isOpen && (
-                <div className="absolute left-5 top-1/2 -translate-y-1/2 w-full bg-white rounded-lg shadow-lg z-50 max-h-64 max-w-4/5 overflow-y-auto">
+                <div className="absolute left-5 right-5 top-full mt-1 bg-white rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
                     {items.map((item, index) => (
                         <div
                             key={index}

@@ -74,27 +74,31 @@ function Home() {
       : '-bottom-20 opacity-0'
 
   return (
-    <div className="text-white h-svh w-full mx-auto overflow-hidden relative">
-      {/* Lottie Animation - full screen */}
-      <div className={`absolute inset-0 w-full h-full `}>
-        <Lottie
-          animationData={animation}
-          loop={false}
-          autoplay
-          style={{ width: '100%', height: '100%' }}
-          rendererSettings={{
-            preserveAspectRatio: 'xMidYMid slice'
-          }}
-        />
-      </div>
+    <div className="text-white h-svh w-svw mx-auto overflow-hidden relative bg-black">
+      {/* Lottie Animation - stretch to fill screen */}
+      <Lottie
+        animationData={animation}
+        loop={false}
+        autoplay
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%'
+        }}
+        rendererSettings={{
+          preserveAspectRatio: 'none'
+        }}
+      />
 
       {/* Start Button */}
       <button
         onClick={handleStart}
-        className={`absolute left-1/2 -translate-x-1/2 bottom-10 group flex items-stretch w-64 outline-none transition-all duration-700 ease-out ${buttonPosition}`}
+        className={`absolute left-1/2 -translate-x-1/2 bottom-20 group flex items-stretch w-64 outline-none transition-all duration-700 ease-out ${buttonPosition}`}
       >
-        <div className="relative w-full bg-[#D9D9D9] rounded-lg border-4 border-r-0 border-red-200 py-2 md:py-3 flex items-center justify-center gap-8 transition-transform">
-          <span className="text-xl font-semibold text-[#BE1E2D] text-center">
+        <div className="relative w-full bg-white rounded-lg border-4 border-r-0 border-red-200 py-2  flex items-center justify-center gap-8 transition-transform">
+          <span className="text-base md:text-lg font-semibold text-[#BE1E2D] text-center">
             Start →
           </span>
         </div>
@@ -105,7 +109,7 @@ function Home() {
             style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}
           />
           <div
-            className="absolute inset-0 bg-[#D9D9D9]"
+            className="absolute inset-0 bg-white"
             style={{
               clipPath:
                 'polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))',
