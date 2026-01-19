@@ -64,13 +64,13 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
                 />
 
                 {/* Display field */}
-                <div className="relative z-10">
-                    <div className="w-full px-0.5 py-3 text-[11px] md:text-sm text-primary">
+                <div className="relative z-10 ">
+                    <div className="w-full  py-3 text-[12px] md:text-sm text-primary ">
                         {selectedValue || placeholder}
                     </div>
 
                     {/* Dropdown indicator */}
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                    <div className="absolute  right-0 top-1/2 -translate-y-1/2">
                         <Triangle
                             className={`text-primary transition-transform ${isOpen ? '' : 'rotate-180'}`}
                             size={10}
