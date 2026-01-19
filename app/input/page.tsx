@@ -34,7 +34,6 @@ function Input() {
   const [jobId, setJobId] = useState<number | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -482,13 +481,12 @@ function Input() {
       </h1>
 
       {!showMobileInput && (
-        <div className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+        <div className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 relative z-20 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
           <Dropdown
             items={['Smile', 'Eyes', 'Hair', 'Face', 'Vibe', 'Sense of Humor', 'Heart']}
             placeholder="What do you love about your partner?"
             value={loveAbout}
             onSelect={(item) => setLoveAbout(item)}
-            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
@@ -496,7 +494,6 @@ function Input() {
             placeholder="How would you describe your relationship?"
             value={relationship}
             onSelect={(item) => setRelationship(item)}
-            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
@@ -504,7 +501,6 @@ function Input() {
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
-            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
 
           <Dropdown
@@ -512,7 +508,6 @@ function Input() {
             placeholder="Select your voice for the song"
             value={voice}
             onSelect={(item) => setVoice(item)}
-            onOpenChange={(open) => setIsDropdownOpen(open)}
           />
         </div>
       )}
@@ -653,7 +648,7 @@ function Input() {
       <button
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
         disabled={isSubmitting || isVerifyingOtp}
-        className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 ${isDropdownOpen ? '-z-10' : 'z-10'} transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
+        className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 z-10 transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
           pageLoaded
             ? (showOtpScreen
                 ? (canSubmitOtp && !isVerifyingOtp ? 'opacity-100' : 'opacity-40')
