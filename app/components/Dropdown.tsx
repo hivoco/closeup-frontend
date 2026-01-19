@@ -65,7 +65,7 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
 
                 {/* Display field */}
                 <div className="relative z-10 ">
-                    <div className="w-full  py-3 text-[12px] md:text-sm text-primary ">
+                    <div className="w-full  py-3 text-sm md:text-sm text-primary ">
                         {selectedValue || placeholder}
                     </div>
 
