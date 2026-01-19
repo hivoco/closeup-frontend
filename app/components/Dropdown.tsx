@@ -47,10 +47,10 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
     }
 
     return (
-        <div className={`relative max-w- self-stretch ${isOpen ? 'z-100' : ''}`} ref={dropdownRef}>
+        <div className={`relative w-full self-stretch ${isOpen ? 'z-100' : ''}`} ref={dropdownRef}>
             {/* Main dropdown button */}
             <div
-                className="relative px-5 py-2.5 overflow-hidden cursor-pointer z-50"
+                className="relative px-2.5   md:px-4 py-2.5 overflow-hidden cursor-pointer z-50"
                 onClick={handleToggle}
             >
                 {/* Texture background */}
@@ -65,7 +65,7 @@ function Dropdown({ items, placeholder = "What do you love about your partner?",
 
                 {/* Display field */}
                 <div className="relative z-10 ">
-                    <div className="w-full  py-3 text-sm md:text-sm text-primary ">
+                    <div className="w-full px-0.5 py-3 text-sm md:text-sm text-primary ">
                         {selectedValue || placeholder}
                     </div>
 
