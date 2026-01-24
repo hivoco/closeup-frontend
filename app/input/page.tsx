@@ -5,6 +5,7 @@ import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Dropdown from '../components/Dropdown'
 import { useRouter } from 'next/navigation'
+import * as faceapi from 'face-api.js'
 
 
 const API_BASE_URL = 'https://api.closeuplovetunes.in/api/v1'
@@ -34,8 +35,11 @@ function Input() {
   const [jobId, setJobId] = useState<number | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
+  const [faceDetected, setFaceDetected] = useState(false)
+  const [modelsLoaded, setModelsLoaded] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Check screen height
   useEffect(() => {
@@ -344,7 +348,90 @@ function Input() {
     }
   }
 
-  // Connect stream to video element when modal opens
+  // Load face detection models
+  const loadFaceDetectionModels = useCallback(async () => {
+    if (modelsLoaded) return
+    try {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+        faceapi.nets.faceLandmark68Net.loadFromUri('/models')
+      ])
+      setModelsLoaded(true)
+      console.log('Face detection models loaded')
+    } catch (error) {
+      console.error('Error loading face detection models:', error)
+    }
+  }, [modelsLoaded])
+
+  // Start face detection on video stream
+  const startFaceDetection = useCallback(() => {
+    if (!videoRef.current || detectionIntervalRef.current) return
+
+    detectionIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return
+
+      try {
+        // Detect faces with landmarks to verify full face is visible
+        const detections = await faceapi
+          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+          .withFaceLandmarks()
+
+        if (detections.length > 0) {
+          const detection = detections[0]
+          const videoWidth = videoRef.current.videoWidth
+          const videoHeight = videoRef.current.videoHeight
+          const box = detection.detection.box
+          const landmarks = detection.landmarks
+
+          // Check if face is reasonably centered and sized
+          const faceWidthRatio = box.width / videoWidth
+          const faceCenterX = box.x + box.width / 2
+          const faceCenterY = box.y + box.height / 2
+          const isCenteredX = faceCenterX > videoWidth * 0.25 && faceCenterX < videoWidth * 0.75
+          const isCenteredY = faceCenterY > videoHeight * 0.15 && faceCenterY < videoHeight * 0.85
+          const isGoodSize = faceWidthRatio > 0.2 && faceWidthRatio < 0.8
+
+          // Check if key facial features are detected (full face visible)
+          // Landmarks: 0-16 = jaw, 17-21 = left eyebrow, 22-26 = right eyebrow,
+          // 27-35 = nose, 36-41 = left eye, 42-47 = right eye, 48-67 = mouth
+          const leftEye = landmarks.getLeftEye()
+          const rightEye = landmarks.getRightEye()
+          const nose = landmarks.getNose()
+          const mouth = landmarks.getMouth()
+
+          // Verify all key features are detected and within frame
+          const hasLeftEye = leftEye.length > 0 && leftEye.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
+          const hasRightEye = rightEye.length > 0 && rightEye.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
+          const hasNose = nose.length > 0 && nose.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
+          const hasMouth = mouth.length > 0 && mouth.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
+
+          const isFullFaceVisible = hasLeftEye && hasRightEye && hasNose && hasMouth
+
+          setFaceDetected(isCenteredX && isCenteredY && isGoodSize && isFullFaceVisible)
+        } else {
+          setFaceDetected(false)
+        }
+      } catch (error) {
+        console.error('Face detection error:', error)
+      }
+    }, 200) // Run detection every 200ms
+  }, [])
+
+  const closeCamera = useCallback(() => {
+    // Stop face detection
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current)
+      detectionIntervalRef.current = null
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    setShowCamera(false)
+    setFaceDetected(false)
+  }, [])
+
+  // Connect stream to video element when modal opens and start face detection
   useEffect(() => {
     if (!showCamera || !streamRef.current) return
 
@@ -356,15 +443,19 @@ function Input() {
 
     console.log('Connecting stream to video element')
     video.srcObject = streamRef.current
-  }, [showCamera])
 
-  const closeCamera = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
+    // Load models and start face detection when video is ready
+    const handleVideoPlay = async () => {
+      await loadFaceDetectionModels()
+      startFaceDetection()
     }
-    setShowCamera(false)
-  }, [])
+
+    video.addEventListener('playing', handleVideoPlay)
+
+    return () => {
+      video.removeEventListener('playing', handleVideoPlay)
+    }
+  }, [showCamera, loadFaceDetectionModels, startFaceDetection])
 
   // Convert base64 to File
   const dataURLtoFile = (dataurl: string, filename: string): File => {
@@ -470,8 +561,8 @@ function Input() {
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center px-4 pt-8 pb-10">
         {/* Logo and disc - row on short screens, column on taller screens - animate from top */}
-        <div className={`flex items-center transition-all duration-700 ease-out ${isShortScreen ? 'flex-row gap-4 mb-3' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
-          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isShortScreen ? 'size-20' : 'size-32 md:size-36'} />
+        <div className={`flex items-center transition-all duration-700 ease-out ${isShortScreen ? 'flex-col' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
+          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isShortScreen ? 'size-28' : 'size-32 md:size-36'} />
           <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className={isShortScreen ? 'size-20' : 'mb-3'} />
         </div>
 
@@ -743,9 +834,30 @@ function Input() {
             <X size={32} />
           </button>
 
-          {/* Camera viewfinder with dotted border */}
+          {/* Face detection status */}
+          <div className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
+            !modelsLoaded
+              ? 'bg-yellow-500/20 text-yellow-400'
+              : faceDetected
+                ? 'bg-green-500/20 text-green-400'
+                : 'bg-red-500/20 text-red-400'
+          }`}>
+            {!modelsLoaded
+              ? 'Loading face detection...'
+              : faceDetected
+                ? '✓ Face detected - Ready to capture'
+                : 'Position your face in the box'}
+          </div>
+
+          {/* Camera viewfinder with dynamic border color - oval on mobile, square on desktop */}
           <div
-            className="size-80 rounded-[11px] border-2 border-dashed border-white relative overflow-hidden"
+            className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
+              !modelsLoaded
+                ? 'border-yellow-400'
+                : faceDetected
+                  ? 'border-green-400'
+                  : 'border-red-400'
+            }`}
           >
             <video
               ref={videoRef}
@@ -763,13 +875,15 @@ function Input() {
             )}
           </div>
 
-          {/* Capture button */}
+          {/* Capture button - disabled when face not detected */}
           <button
             onClick={capturePhoto}
-            disabled={isVerifyingPhoto}
-            className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center ${isVerifyingPhoto ? 'opacity-50' : ''}`}
+            disabled={isVerifyingPhoto || !faceDetected}
+            className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-opacity ${
+              isVerifyingPhoto || !faceDetected ? 'opacity-40 cursor-not-allowed' : 'opacity-100'
+            }`}
           >
-            <div className="w-14 h-14 border-4 border-black rounded-full" />
+            <div className={`w-14 h-14 border-4 rounded-full ${faceDetected ? 'border-green-500' : 'border-gray-400'}`} />
           </button>
 
           {/* Instructions list */}
