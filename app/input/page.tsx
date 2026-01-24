@@ -729,8 +729,8 @@ function Input() {
             className="mt-1 w-4 h-4 accent-black "
           />
           <span className="text-white text-[10px] font-normal">
-           “I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review before video generation. This is valid for a limited time period."{' '}
-            <a href="#" className="underline">Link</a>
+           &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review before video generation. This is valid for a limited time period.&quot;{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Link</a>
           </span>
         </label>
       )}
