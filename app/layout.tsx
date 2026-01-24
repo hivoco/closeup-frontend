@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     siteName: "Closeup Love Tunes",
     images: [
       {
-        url: "/og/closeup-love-tunes.png",
+        url: "/og/thanks-logo.png",
         width: 1200,
         height: 630,
         alt: "Closeup Love Tunes - Personalized Love Music Video",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     title: "Create Your Personalized Love Tune | Closeup",
     description:
       "Turn your love story into a personalized romantic music video with Closeup Love Tunes.",
-    images: ["/og/closeup-love-tunes.png"],
+    images: ["/og/thanks-logo.png"],
   },
 
   robots: {
