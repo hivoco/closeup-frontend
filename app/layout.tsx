@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geologica } from "next/font/google";
 import { ToastContainer } from "react-toastify";
+import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    "Create a personalized romantic music video with Closeup Love Tunes. Turn your love story into a beautiful Valentine’s music video.",
+    "Create a personalized romantic music video with Closeup Love Tunes. Turn your love story into a beautiful Valentine's music video.",
 
   openGraph: {
     title: "Create Your Personalized Love Tune | Closeup",
@@ -63,6 +64,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <GoogleTagManager gtmId="GTM-NK2Q4ZM3" />
       <body className={`${geologica.className} antialiased`}>
         {children}
 
@@ -80,6 +82,7 @@ export default function RootLayout({
           toastStyle={{ backgroundColor: "white", color: "black" }}
         />
       </body>
+      <GoogleAnalytics gaId="G-FZLSKM6970" />
     </html>
   );
 }
