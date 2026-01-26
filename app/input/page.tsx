@@ -352,6 +352,10 @@ function Input() {
   const loadFaceDetectionModels = useCallback(async () => {
     if (modelsLoaded) return
     try {
+      // Wait for TensorFlow.js backend to be ready
+      await faceapi.tf.ready()
+      await faceapi.tf.setBackend('webgl')
+
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
         faceapi.nets.faceLandmark68Net.loadFromUri('/models')
@@ -360,17 +364,35 @@ function Input() {
       console.log('Face detection models loaded')
     } catch (error) {
       console.error('Error loading face detection models:', error)
+      // Try CPU backend as fallback
+      try {
+        await faceapi.tf.setBackend('cpu')
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('/models')
+        ])
+        setModelsLoaded(true)
+        console.log('Face detection models loaded with CPU backend')
+      } catch (fallbackError) {
+        console.error('Failed to load models with CPU fallback:', fallbackError)
+      }
     }
   }, [modelsLoaded])
 
   // Start face detection on video stream
   const startFaceDetection = useCallback(() => {
-    if (!videoRef.current || detectionIntervalRef.current) return
+    if (!videoRef.current || detectionIntervalRef.current || !modelsLoaded) return
 
     detectionIntervalRef.current = setInterval(async () => {
       if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return
 
       try {
+        // Check if backend is ready
+        if (!faceapi.tf.getBackend()) {
+          console.warn('TensorFlow backend not ready, skipping detection')
+          return
+        }
+
         // Detect faces with landmarks to verify full face is visible
         const detections = await faceapi
           .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
@@ -415,7 +437,7 @@ function Input() {
         console.error('Face detection error:', error)
       }
     }, 200) // Run detection every 200ms
-  }, [])
+  }, [modelsLoaded])
 
   const closeCamera = useCallback(() => {
     // Stop face detection
