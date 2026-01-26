@@ -82,7 +82,7 @@ export default function RootLayout({
           toastStyle={{ backgroundColor: "white", color: "black" }}
         />
       </body>
-      <GoogleAnalytics gaId="G-FZLSKM6970" />
+      {/* <GoogleAnalytics gaId="G-FZLSKM6970" /> */}
     </html>
   );
 }
