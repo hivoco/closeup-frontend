@@ -761,10 +761,13 @@ function Input() {
 
       {/* Button inside scroll area - animate from bottom */}
       <button
-        id="btn-submit-form"
+        id={showOtpScreen ? 'btn-verify-otp' : (showMobileInput ? 'btn-send-otp' : 'btn-next-step')}
+        data-action={showOtpScreen ? 'verify-otp' : (showMobileInput ? 'send-otp' : 'next-step')}
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
         disabled={isSubmitting || isVerifyingOtp}
         className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 z-10 transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
+          showOtpScreen ? 'btn-otp-submit' : (showMobileInput ? 'btn-mobile-submit' : 'btn-form-next')
+        } ${
           pageLoaded
             ? (showOtpScreen
                 ? (canSubmitOtp && !isVerifyingOtp ? 'opacity-100' : 'opacity-40')
