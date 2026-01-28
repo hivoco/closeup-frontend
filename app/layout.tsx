@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geologica } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
@@ -10,8 +10,15 @@ const geologica = Geologica({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://test.closeuplovetunes.in"),
+  metadataBase: new URL("https://closeuplovetunes.in"),
 
   title: {
     default: "Create Your Personalized Love Tune | Closeup Love Tunes",
@@ -25,11 +32,11 @@ export const metadata: Metadata = {
     title: "Create Your Personalized Love Tune | Closeup",
     description:
       "Surprise your partner with a personalized romantic music video. Create your Closeup Love Tune today.",
-    url: "https://test.closeuplovetunes.in",
+    url: "https://closeuplovetunes.in",
     siteName: "Closeup Love Tunes",
     images: [
       {
-        url: "/og/thanks-logo.png",
+        url: "/og/red-logo.png",
         width: 1200,
         height: 630,
         alt: "Closeup Love Tunes - Personalized Love Music Video",
@@ -44,7 +51,7 @@ export const metadata: Metadata = {
     title: "Create Your Personalized Love Tune | Closeup",
     description:
       "Turn your love story into a personalized romantic music video with Closeup Love Tunes.",
-    images: ["/og/thanks-logo.png"],
+    images: ["/og/red-logo.png"],
   },
 
   robots: {
@@ -53,7 +60,7 @@ export const metadata: Metadata = {
   },
 
   alternates: {
-    canonical: "https://test.closeuplovetunes.in",
+    canonical: "https://closeuplovetunes.in",
   },
 };
 

@@ -53,6 +53,7 @@ function ThanksYou() {
     <div className="text-white h-svh w-svw overflow-hidden relative bg-black">
       {/* Restart button - top left */}
       <button
+        id="btn-home-thankyou"
         onClick={handleRestart}
         className="fixed top-12 md:top-22 left-6 md:left-16 flex items-center px-3 py-2 md:py-1 bg-white rounded-full backdrop-blur-md md:gap-1 text-red-500 z-40"
       >

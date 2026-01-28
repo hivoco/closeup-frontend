@@ -565,6 +565,7 @@ function Input() {
       {/* Back button - visible on mobile input screen and OTP screen */}
       {(showMobileInput || showOtpScreen) && (
         <button
+          id="btn-back-input"
           onClick={handleBackClick}
           className="fixed top-8 left-4 flex items-center gap-1 text-white z-10"
         >
@@ -722,6 +723,7 @@ function Input() {
             )}
 
             <button
+              id="btn-resend-otp"
               onClick={handleResendOtp}
               disabled={isResendingOtp || otpTimer > 0}
               className={`text-sm underline ${
@@ -752,13 +754,14 @@ function Input() {
           />
           <span className="text-white text-[10px] font-normal">
            &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review before video generation. This is valid for a limited time period.&quot;{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Link</a>
+            <a id="link-terms" href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Link</a>
           </span>
         </label>
       )}
 
       {/* Button inside scroll area - animate from bottom */}
       <button
+        id="btn-submit-form"
         onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
         disabled={isSubmitting || isVerifyingOtp}
         className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 z-10 transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
@@ -849,6 +852,7 @@ function Input() {
         <div className="fixed inset-0 bg-black z-50  flex flex-col items-center justify-center">
           {/* Close button */}
           <button
+            id="btn-close-camera"
             onClick={closeCamera}
             className="absolute top-4 right-4  text-white z-20"
             disabled={isVerifyingPhoto}
@@ -899,6 +903,7 @@ function Input() {
 
           {/* Capture button - disabled when face not detected */}
           <button
+            id="btn-capture-photo"
             onClick={capturePhoto}
             disabled={isVerifyingPhoto || !faceDetected}
             className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-opacity ${

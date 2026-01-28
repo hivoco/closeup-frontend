@@ -8,6 +8,7 @@ function TermsAndConditions() {
     <div className="min-h-screen bg-primary text-white">
       {/* Close button */}
       <button
+        id="btn-close-terms"
         onClick={() => window.close()}
         className="fixed top-12 md:top-22 left-6 md:left-16 flex items-center px-3 py-2 md:py-1 bg-white rounded-full backdrop-blur-md md:gap-1 text-primary z-40"
       >

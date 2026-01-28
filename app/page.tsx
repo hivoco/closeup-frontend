@@ -238,6 +238,7 @@ function Home() {
             : 'opacity-0 translate-y-50'
         }`}>
           <button
+            id="btn-start-journey"
             onClick={handleStart}
             className="group flex items-stretch w-64 outline-none"
           >
