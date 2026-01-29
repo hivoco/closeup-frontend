@@ -25,6 +25,8 @@ function Input() {
   const [preCameraProgress, setPreCameraProgress] = useState(0)
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
   const [capturedPhotoFile, setCapturedPhotoFile] = useState<File | null>(null)
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  const [previewPhotoFile, setPreviewPhotoFile] = useState<File | null>(null)
   const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false)
   const [showOtpScreen, setShowOtpScreen] = useState(false)
   const [otpCode, setOtpCode] = useState('')
@@ -398,6 +400,9 @@ function Input() {
           .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
           .withFaceLandmarks()
 
+        // videoRef may have become null while detectAllFaces was running
+        if (!videoRef.current) return
+
         if (detections.length > 0) {
           const detection = detections[0]
           const videoWidth = videoRef.current.videoWidth
@@ -453,9 +458,9 @@ function Input() {
     setFaceDetected(false)
   }, [])
 
-  // Connect stream to video element when modal opens and start face detection
+  // Connect stream to video element when modal opens or when returning from preview
   useEffect(() => {
-    if (!showCamera || !streamRef.current) return
+    if (!showCamera || !streamRef.current || previewPhoto) return
 
     const video = videoRef.current
     if (!video) {
@@ -477,7 +482,7 @@ function Input() {
     return () => {
       video.removeEventListener('playing', handleVideoPlay)
     }
-  }, [showCamera, loadFaceDetectionModels, startFaceDetection])
+  }, [showCamera, previewPhoto, loadFaceDetectionModels, startFaceDetection])
 
   // Convert base64 to File
   const dataURLtoFile = (dataurl: string, filename: string): File => {
@@ -495,24 +500,32 @@ function Input() {
   // Verify photo with API
   const verifyPhoto = async (file: File): Promise<{ valid: boolean; message: string; reason?: string }> => {
     try {
-      const formData = new FormData()
-      formData.append('photo', file)
+      const formData = new FormData();
+      formData.append("photo", file);
+      // Wait for 10 minutes before making the API call
+      // await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
 
-      const response = await fetch(`${API_BASE_URL}/photo-validation/check_photo`, {
-        method: 'POST',
-        body: formData,
-      })
+      const response = await fetch(
+        `${API_BASE_URL}/photo-validation/check_photo`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok && data.valid) {
-        return { valid: true, message: data.message || 'Photo validated successfully' }
+        return {
+          valid: true,
+          message: data.message || "Photo validated successfully",
+        };
       } else {
         return {
           valid: false,
-          message: data.message || 'Photo validation failed',
-          reason: data.reason || 'Please retake the photo'
-        }
+          message: data.message || "Photo validation failed",
+          reason: data.reason || "Please retake the photo",
+        };
       }
     } catch (error) {
       console.error('Photo verification error:', error)
@@ -520,44 +533,67 @@ function Input() {
     }
   }
 
-  const capturePhoto = async () => {
+  const capturePhoto = () => {
     if (videoRef.current) {
       const canvas = document.createElement('canvas')
       canvas.width = videoRef.current.videoWidth
       canvas.height = videoRef.current.videoHeight
       const ctx = canvas.getContext('2d')
       if (ctx) {
+        // Mirror the capture to match the mirrored live preview
+        ctx.translate(canvas.width, 0)
+        ctx.scale(-1, 1)
         ctx.drawImage(videoRef.current, 0, 0)
         const photoData = canvas.toDataURL('image/jpeg')
-
-        // Convert to file for API
         const file = dataURLtoFile(photoData, 'captured-photo.jpg')
 
-        // Start verification
-        setIsVerifyingPhoto(true)
-
-        try {
-          const result = await verifyPhoto(file)
-          // const result = {"valid": true, "message": "Photo is valid", "reason": ""}
-
-          if (result.valid) {
-            setCapturedPhoto(photoData)
-            setCapturedPhotoFile(file)
-            closeCamera()
-            toast.success('Photo verified successfully!')
-          } else {
-            toast.error(`${result.message}${result.reason ? ` - ${result.reason}` : ''}`)
-          }
-        } catch (error) {
-          toast.error('Photo verification failed. Please try again.')
-        } finally {
-          setIsVerifyingPhoto(false)
+        // Stop face detection before removing the video element
+        if (detectionIntervalRef.current) {
+          clearInterval(detectionIntervalRef.current)
+          detectionIntervalRef.current = null
         }
+
+        // Show preview immediately
+        setPreviewPhoto(photoData)
+        setPreviewPhotoFile(file)
       }
     }
   }
 
-  
+  const handleRetakePhoto = () => {
+    setPreviewPhoto(null)
+    setPreviewPhotoFile(null)
+    // Face detection will restart via the useEffect when the video element re-renders
+  }
+
+  const handleConfirmPhoto = async () => {
+    if (!previewPhoto || !previewPhotoFile) return
+
+    setIsVerifyingPhoto(true)
+    try {
+      const result = await verifyPhoto(previewPhotoFile)
+
+      if (result.valid) {
+        setCapturedPhoto(previewPhoto)
+        setCapturedPhotoFile(previewPhotoFile)
+        setPreviewPhoto(null)
+        setPreviewPhotoFile(null)
+        closeCamera()
+        toast.success('Photo verified successfully!')
+      } else {
+        setPreviewPhoto(null)
+        setPreviewPhotoFile(null)
+        toast.error(`${result.message}${result.reason ? ` - ${result.reason}` : ''}`)
+      }
+    } catch (error) {
+      setPreviewPhoto(null)
+      setPreviewPhotoFile(null)
+      toast.error('Photo verification failed. Please try again.')
+    } finally {
+      setIsVerifyingPhoto(false)
+    }
+  }
+
 
   return (
     <div className="min-h-svh flex flex-col max-w-sm mx-auto  relative">
@@ -856,73 +892,115 @@ function Input() {
           {/* Close button */}
           <button
             id="btn-close-camera"
-            onClick={closeCamera}
+            onClick={() => { setPreviewPhoto(null); setPreviewPhotoFile(null); closeCamera() }}
             className="absolute top-4 right-4  text-white z-20"
             disabled={isVerifyingPhoto}
           >
             <X size={32} />
           </button>
 
-          {/* Face detection status */}
-          <div className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
-            !modelsLoaded
-              ? 'bg-yellow-500/20 text-yellow-400'
-              : faceDetected
-                ? 'bg-green-500/20 text-green-400'
-                : 'bg-red-500/20 text-red-400'
-          }`}>
-            {!modelsLoaded
-              ? 'Loading face detection...'
-              : faceDetected
-                ? '✓ Face detected - Ready to capture'
-                : 'Position your face in the box'}
-          </div>
-
-          {/* Camera viewfinder with dynamic border color - oval on mobile, square on desktop */}
-          <div
-            className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
-              !modelsLoaded
-                ? 'border-yellow-400'
-                : faceDetected
-                  ? 'border-green-400'
-                  : 'border-red-400'
-            }`}
-          >
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="w-full h-full object-cover"
-            />
-            {/* Verifying overlay */}
-            {isVerifyingPhoto && (
-              <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
-                <Loader2 size={48} className="text-white animate-spin" />
-                <span className="text-white mt-4 text-sm">Verifying photo...</span>
+          {previewPhoto ? (
+            <>
+              {/* Preview: show captured image */}
+              <div className="mb-4 px-4 py-2 rounded-full text-sm font-medium bg-white/20 text-white">
+                Review your photo
               </div>
-            )}
-          </div>
 
-          {/* Capture button - disabled when face not detected */}
-          <button
-            id="btn-capture-photo"
-            onClick={capturePhoto}
-            disabled={isVerifyingPhoto || !faceDetected}
-            className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-opacity ${
-              isVerifyingPhoto || !faceDetected ? 'opacity-40 cursor-not-allowed' : 'opacity-100'
-            }`}
-          >
-            <div className={`w-14 h-14 border-4 rounded-full ${faceDetected ? 'border-green-500' : 'border-gray-400'}`} />
-          </button>
+              <div className="w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed border-white relative overflow-hidden">
+                <img src={previewPhoto} alt="Preview" className="w-full h-full object-cover" />
+                {/* Verifying overlay */}
+                {isVerifyingPhoto && (
+                  <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
+                    <Loader2 size={48} className="text-white animate-spin" />
+                    <span className="text-white mt-4 text-sm">Verifying photo...</span>
+                  </div>
+                )}
+              </div>
 
-          {/* Instructions list */}
-          <ul className="text-white w-80 mt-6 text-xs list-disc list-outside space-y-1 px-4">
-            <li>Position yourself so that your face is clearly visible.</li>
-            <li>Ensure there are no objects covering your face or body.</li>
-            <li>Use good lighting and avoid shadows or backlight.</li>
-            <li>When ready, Say Cheers, Tap 'Capture.'</li>
-          </ul>
+              {/* Retake / Confirm buttons */}
+              <div className="flex gap-6 mt-8">
+                <button
+                  id="btn-retake-photo"
+                  onClick={handleRetakePhoto}
+                  disabled={isVerifyingPhoto}
+                  className="px-6 py-3 rounded-full border border-white text-white text-sm font-medium disabled:opacity-40"
+                >
+                  Retake
+                </button>
+                <button
+                  id="btn-confirm-photo"
+                  onClick={handleConfirmPhoto}
+                  disabled={isVerifyingPhoto}
+                  className="px-6 py-3 rounded-full bg-white text-black text-sm font-medium disabled:opacity-40 flex items-center gap-2"
+                >
+                  {isVerifyingPhoto ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    'Confirm'
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Face detection status */}
+              <div className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
+                !modelsLoaded
+                  ? 'bg-yellow-500/20 text-yellow-400'
+                  : faceDetected
+                    ? 'bg-green-500/20 text-green-400'
+                    : 'bg-red-500/20 text-red-400'
+              }`}>
+                {!modelsLoaded
+                  ? 'Loading face detection...'
+                  : faceDetected
+                    ? '✓ Face detected - Ready to capture'
+                    : 'Position your face in the box'}
+              </div>
+
+              {/* Camera viewfinder with dynamic border color - oval on mobile, square on desktop */}
+              <div
+                className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
+                  !modelsLoaded
+                    ? 'border-yellow-400'
+                    : faceDetected
+                      ? 'border-green-400'
+                      : 'border-red-400'
+                }`}
+              >
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover -scale-x-100"
+                />
+              </div>
+
+              {/* Capture button - disabled when face not detected */}
+              <button
+                id="btn-capture-photo"
+                onClick={capturePhoto}
+                disabled={!faceDetected}
+                className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-opacity ${
+                  !faceDetected ? 'opacity-40 cursor-not-allowed' : 'opacity-100'
+                }`}
+              >
+                <div className={`w-14 h-14 border-4 rounded-full ${faceDetected ? 'border-green-500' : 'border-gray-400'}`} />
+              </button>
+
+              {/* Instructions list */}
+              <ul className="text-white w-80 mt-6 text-xs list-disc list-outside space-y-1 px-4">
+                <li>Position yourself so that your face is clearly visible.</li>
+                <li>Ensure there are no objects covering your face or body.</li>
+                <li>Use good lighting and avoid shadows or backlight.</li>
+                <li>When ready, Say Cheers, Tap 'Capture.'</li>
+              </ul>
+            </>
+          )}
         </div>
       )}
     </div>
