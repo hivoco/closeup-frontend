@@ -646,8 +646,14 @@ function Input() {
             onSelect={(item) => setRelationship(item)}
           />
 
-          <Dropdown
+          {/* <Dropdown
             items={["Romantic", "Rock", "Rap"]}
+            placeholder="What's your vibe?"
+            value={vibe}
+            onSelect={(item) => setVibe(item)}
+          /> */}
+            <Dropdown
+            items={["Romantic"]}
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
