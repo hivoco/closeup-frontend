@@ -36,6 +36,7 @@ function Input() {
   const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
   const [jobId, setJobId] = useState<number | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
+  const [isMiniScreen, setIsMiniScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
   const [faceDetected, setFaceDetected] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
@@ -47,6 +48,7 @@ function Input() {
   useEffect(() => {
     const checkScreenHeight = () => {
       setIsShortScreen(window.innerHeight < 700)
+      setIsMiniScreen(window.innerHeight < 630)
     }
 
     checkScreenHeight()
@@ -598,9 +600,9 @@ function Input() {
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center px-4 pt-8 pb-10">
         {/* Logo and disc - row on short screens, column on taller screens - animate from top */}
-        <div className={`flex items-center transition-all duration-700 ease-out ${isShortScreen ? 'flex-col' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
-          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isShortScreen ? 'size-28' : 'size-32 md:size-36'} />
-          <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className={isShortScreen ? 'size-20' : 'mb-3'} />
+        <div className={`flex items-center transition-all duration-700 ease-out ${isMiniScreen ? 'flex-row gap-4' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
+          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isMiniScreen ? 'size-20' : isShortScreen ? 'size-28' : 'size-32 md:size-36'} />
+          <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className={isMiniScreen ? 'size-20' : isShortScreen ? 'size-20' : 'mb-3'} />
         </div>
 
 
@@ -946,22 +948,29 @@ function Input() {
               </div>
 
               {/* Camera viewfinder with dynamic border color - oval on mobile, square on desktop */}
-              <div
-                className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
-                  !modelsLoaded
-                    ? 'border-yellow-400'
-                    : faceDetected
-                      ? 'border-green-400'
-                      : 'border-red-400'
-                }`}
-              >
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover -scale-x-100"
-                />
+              <div className="relative">
+                <div
+                  className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
+                    !modelsLoaded
+                      ? 'border-yellow-400'
+                      : faceDetected
+                        ? 'border-green-400'
+                        : 'border-red-400'
+                  }`}
+                >
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover -scale-x-100"
+                  />
+                </div>
+
+                {/* Smile badge - shown while face is detected */}
+                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-sm font-medium shadow-lg transition-all duration-300 whitespace-nowrap ${faceDetected ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
+                  Let&apos;s see you smile!
+                </div>
               </div>
 
               {/* Capture button - disabled when face not detected */}
