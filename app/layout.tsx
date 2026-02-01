@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geologica } from "next/font/google";
 import { ToastContainer } from "react-toastify";
-import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
+import { GoogleTagManager } from "@next/third-parties/google";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 
@@ -89,7 +89,6 @@ export default function RootLayout({
           toastStyle={{ backgroundColor: "white", color: "black" }}
         />
       </body>
-      {/* <GoogleAnalytics gaId="G-FZLSKM6970" /> */}
     </html>
   );
 }
