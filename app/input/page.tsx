@@ -726,7 +726,7 @@ function Input() {
                   type="tel"
                   value={otpCode}
                   onChange={handleOtpChange}
-                  placeholder="Enter 6 digit OTP code"
+                  placeholder="Enter 6 digit verification code"
                   className="w-full bg-transparent py-3 text-sm text-primary placeholder-primary/60 outline-none text-center tracking-widest"
                   maxLength={6}
                 />
