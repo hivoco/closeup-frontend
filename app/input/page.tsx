@@ -614,7 +614,7 @@ function Input() {
         <div className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 relative z-20 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
 
           <Dropdown
-            items={['Smile', 'Eyes', 'Hair',  'Vibe', 'Sense of Humor', 'Heart']}
+            items={['Smile', 'Eyes', 'Hair', "Face", 'Vibe', 'Sense of Humor', 'Heart']}
             placeholder="What do you love about your partner?"
             value={loveAbout}
             onSelect={(item) => setLoveAbout(item)}
@@ -634,7 +634,7 @@ function Input() {
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-            items={["Romantic"]}
+            items={["Romantic","Rock"]}
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
