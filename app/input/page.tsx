@@ -150,7 +150,7 @@ function Input() {
 
       if (!response.ok) {
         if (response.status === 403) {
-          toast.error('You have reached the maximum limit of 3 videos')
+          toast.error('You have reached the maximum limit of 2 videos')
         } else {
           toast.error(data.detail || 'Failed to submit. Please try again.')
         }
