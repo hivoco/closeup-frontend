@@ -621,7 +621,7 @@ function Input() {
           />
 
           <Dropdown
-            items={[ 'Dating', 'Long-Distance', 'Crushing', 'Situationship', 'Nanoship']}
+            items={[ 'Dating', 'Long-Distance','Married', 'Crushing', 'Situationship', 'Nanoship']}
             placeholder="How would you describe your relationship?"
             value={relationship}
             onSelect={(item) => setRelationship(item)}
