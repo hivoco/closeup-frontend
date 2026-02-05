@@ -671,6 +671,7 @@ function Input() {
                 "Smile",
                 "Eyes",
                 "Hair",
+                "Face",
                 "Vibe",
                 "Sense of Humor",
                 "Heart",
