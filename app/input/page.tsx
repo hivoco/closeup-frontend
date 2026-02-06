@@ -35,6 +35,7 @@ function Input() {
   const [isResendingOtp, setIsResendingOtp] = useState(false)
   const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
   const [jobId, setJobId] = useState<number | null>(null)
+  const [validationToken, setValidationToken] = useState<string | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [isMiniScreen, setIsMiniScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
@@ -140,6 +141,7 @@ function Input() {
       formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
       formData.append('photo', capturedPhotoFile)
       formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
+      formData.append('validation_token', validationToken || '')
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
         method: 'POST',
@@ -496,6 +498,9 @@ function Input() {
       const data = await response.json();
 
       if (response.ok && data.valid) {
+        if (data.validation_token) {
+          setValidationToken(data.validation_token)
+        }
         return {
           valid: true,
           message: data.message || "Photo validated successfully",
