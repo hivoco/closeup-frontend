@@ -35,6 +35,7 @@ function Input() {
   const [isResendingOtp, setIsResendingOtp] = useState(false)
   const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
   const [jobId, setJobId] = useState<number | null>(null)
+  const [validationToken, setValidationToken] = useState<string | null>(null)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [isMiniScreen, setIsMiniScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
@@ -140,6 +141,7 @@ function Input() {
       formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
       formData.append('photo', capturedPhotoFile)
       formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
+      formData.append('validation_token', validationToken || '')
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
         method: 'POST',
@@ -150,7 +152,7 @@ function Input() {
 
       if (!response.ok) {
         if (response.status === 403) {
-          toast.error('You have reached the maximum limit of 3 videos')
+          toast.error('You have reached the maximum limit of 2 videos')
         } else {
           toast.error(data.detail || 'Failed to submit. Please try again.')
         }
@@ -496,6 +498,9 @@ function Input() {
       const data = await response.json();
 
       if (response.ok && data.valid) {
+        if (data.validation_token) {
+          setValidationToken(data.validation_token)
+        }
         return {
           valid: true,
           message: data.message || "Photo validated successfully",
@@ -577,7 +582,6 @@ function Input() {
 
   return (
     <div className="min-h-svh flex flex-col max-w-sm mx-auto  relative">
-
       {/* Back button - visible on mobile input screen and OTP screen */}
       {(showMobileInput || showOtpScreen) && (
         <button
@@ -591,237 +595,379 @@ function Input() {
       )}
 
       {/* Decorative images - fixed position with fade in animation */}
-      <Image src="/heart.png" alt="" width={80} height={40} className={`fixed top-0 left-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
-      <Image src="/double-heart.png" alt="" width={90} height={40} className={`fixed bottom-50 left-40 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
-      <Image src="/heart_scribble.png" alt="" width={100} height={40} className={`fixed top-25 right-10 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
-      <Image src="/double_star.png" alt="" width={82} height={40} className={`fixed bottom-0 right-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
-      <Image src="/toothpaste.png" alt="" width={300} height={300} className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 ${pageLoaded ? 'opacity-100' : 'opacity-0'}`} />
+      <Image
+        src="/heart.png"
+        alt=""
+        width={80}
+        height={40}
+        className={`fixed top-0 left-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <Image
+        src="/double-heart.png"
+        alt=""
+        width={90}
+        height={40}
+        className={`fixed bottom-50 left-40 pointer-events-none transition-opacity duration-200 ${pageLoaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <Image
+        src="/heart_scribble.png"
+        alt=""
+        width={100}
+        height={40}
+        className={`fixed top-25 right-10 pointer-events-none transition-opacity duration-200 ${pageLoaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <Image
+        src="/double_star.png"
+        alt=""
+        width={82}
+        height={40}
+        className={`fixed bottom-0 right-0 pointer-events-none transition-opacity duration-200 ${pageLoaded ? "opacity-100" : "opacity-0"}`}
+      />
+      <Image
+        src="/toothpaste.png"
+        alt=""
+        width={300}
+        height={300}
+        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-200 ${pageLoaded ? "opacity-100" : "opacity-0"}`}
+      />
 
       {/* Scrollable content area */}
       <div className="flex-1 overflow-y-auto hide-scrollbar flex flex-col items-center px-4 pt-8 pb-10">
         {/* Logo and disc - row on short screens, column on taller screens - animate from top */}
-        <div className={`flex items-center transition-all duration-700 ease-out ${isMiniScreen ? 'flex-row gap-4' : 'flex-col'} ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
-          <Image src="/closeup-love-tunes.png" alt="Closeup Love Tunes" width={132} height={132} className={isMiniScreen ? 'size-20' : isShortScreen ? 'size-28' : 'size-32 md:size-36'} />
-          <Image src="/disc.gif" alt="Closeup Love Tunes" width={100} height={100} className={isMiniScreen ? 'size-20' : isShortScreen ? 'size-20' : 'mb-3'} />
+        <div
+          className={`flex items-center transition-all duration-700 ease-out ${isMiniScreen ? "flex-row gap-4" : "flex-col"} ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-32"}`}
+        >
+          <Image
+            src="/closeup-love-tunes.png"
+            alt="Closeup Love Tunes"
+            width={132}
+            height={132}
+            className={
+              isMiniScreen
+                ? "size-20"
+                : isShortScreen
+                  ? "size-28"
+                  : "size-32 md:size-36"
+            }
+          />
+          <Image
+            src="/disc.gif"
+            alt="Closeup Love Tunes"
+            width={100}
+            height={100}
+            className={
+              isMiniScreen ? "size-20" : isShortScreen ? "size-20" : "mb-3"
+            }
+          />
         </div>
 
+        <h1
+          className={`text-white text-base md:text-lg font-light text-center mb-4 transition-all duration-700 ease-out delay-100 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-32"}`}
+        >
+          Drop Your Love Vibe
+        </h1>
 
-      <h1 className={`text-white text-base md:text-lg font-light text-center mb-4 transition-all duration-700 ease-out delay-100 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-32'}`}>
-        Drop Your Love Vibe
-      </h1>
+        {!showMobileInput && (
+          <div
+            className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 relative z-20 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+          >
+            <Dropdown
+              items={[
+                "Smile",
+                "Eyes",
+                "Hair",
+                "Face",
+                "Vibe",
+                "Sense of Humor",
+                "Heart",
+              ]}
+              placeholder="What do you love about your partner?"
+              value={loveAbout}
+              onSelect={(item) => setLoveAbout(item)}
+            />
 
-      {!showMobileInput && (
-        <div className={`flex flex-col w-full transition-all duration-700 ease-out delay-200 relative z-20 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
+            <Dropdown
+              items={[
+                "Dating",
+                "Married",
+                "Long-Distance",
+                "Crushing",
+                "Situationship",
+                "Nanoship",
+              ]}
+              placeholder="How would you describe your relationship?"
+              value={relationship}
+              onSelect={(item) => setRelationship(item)}
+            />
 
-          <Dropdown
-            items={['Smile', 'Eyes', 'Hair', "Face", 'Vibe', 'Sense of Humor', 'Heart']}
-            placeholder="What do you love about your partner?"
-            value={loveAbout}
-            onSelect={(item) => setLoveAbout(item)}
-          />
-
-          <Dropdown
-            items={[ 'Dating', 'Long-Distance','Married', 'Crushing', 'Situationship', 'Nanoship']}
-            placeholder="How would you describe your relationship?"
-            value={relationship}
-            onSelect={(item) => setRelationship(item)}
-          />
-
-          {/* <Dropdown
+            {/* <Dropdown
             items={["Romantic", "Rock", "Rap"]}
             placeholder="What's your vibe?"
             value={vibe}
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-            items={["Romantic", "Rock", "Rap"]}
-            placeholder="What's your vibe?"
-            value={vibe}
-            onSelect={(item) => setVibe(item)}
-          />
+              items={["Romantic", "Rock","Rap"]}
+              placeholder="What's your vibe?"
+              value={vibe}
+              onSelect={(item) => setVibe(item)}
+            />
 
-          <Dropdown
-            items={['Female voice', 'Male voice']}
-            placeholder="Select your voice for the song"
-            value={voice}
-            onSelect={(item) => setVoice(item)}
-          />
-        </div>
-      )}
-
-      {showMobileInput && !showOtpScreen && (
-        <div className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'} `}>
-          {/* Upload photo box */}
-          {capturedPhoto ? (
-            <div
-              onClick={() => {
-                console.log('Retake photo clicked')
-                openPreCamera()
-              }}
-              className="w-24 h-24 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
-            >
-              <img src={capturedPhoto} alt="Captured" className="w-full h-full object-cover" />
-            </div>
-          ) : (
-            <div
-              onClick={() => {
-                console.log('Upload box clicked')
-                openPreCamera()
-              }}
-              className="w-[279px] h-[100px] backdrop-blur-xs rounded-[11px] border border-dashed border-white flex items-center justify-center gap-3 mb-4 cursor-pointer"
-              style={{ borderWidth: '0.94px' }}
-            >
-              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-                <Image src="/camera.png" alt="Camera" width={32} height={32} />
-              </div>
-              <span className="text-white text-sm">Upload your photo</span>
-            </div>
-          )}
-
-          {/* Mobile input */}
-          <div className="relative self-stretch">
-            <div className="relative px-5 py-2.5 overflow-hidden">
-              <Image
-                className="absolute inset-0 object-cover pointer-events-none z-0 w-full h-full"
-                src="/texture.png"
-                alt=""
-                width={288}
-                height={60}
-                quality={100}
-              />
-              <div className="relative z-10 flex items-center gap-2">
-                <span className="text-sm text-primary font-medium">+91</span>
-                <input
-                  type="tel"
-                  value={mobileNumber}
-                  onChange={handleMobileChange}
-                  placeholder="Enter Your WhatsApp Number"
-                  className="w-full bg-transparent py-3 text-sm text-primary placeholder-primary/60 outline-none"
-                  maxLength={10}
-                />
-
-              </div>
-
-            </div>
-          
+            <Dropdown
+              items={["Female voice", "Male voice"]}
+              placeholder="Select your voice for the song"
+              value={voice}
+              onSelect={(item) => setVoice(item)}
+            />
           </div>
-        </div>
-      )}
+        )}
 
-      {showOtpScreen && (
-        <div className={`flex flex-col  items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
-          {/* OTP input */}
-          <div className="relative self-stretch">
-            <div className="relative px-5 py-2.5 overflow-hidden">
-              <Image
-                className="absolute inset-0 object-cover pointer-events-none z-0 w-full h-full"
-                src="/texture.png"
-                alt=""
-                width={288}
-                height={60}
-                quality={100}
-              />
-              <div className="relative z-10 flex items-center gap-2">
-                <input
-                  type="tel"
-                  value={otpCode}
-                  onChange={handleOtpChange}
-                  placeholder="Enter 6 digit OTP code"
-                  className="w-full bg-transparent py-3 text-sm text-primary placeholder-primary/60 outline-none text-center tracking-widest"
-                  maxLength={6}
+        {showMobileInput && !showOtpScreen && (
+          <div
+            className={`flex flex-col items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"} `}
+          >
+            {/* Upload photo box */}
+            {capturedPhoto ? (
+              <div
+                onClick={() => {
+                  console.log("Retake photo clicked");
+                  openPreCamera();
+                }}
+                className="w-24 h-24 rounded-full border-2 border-white overflow-hidden mb-4 cursor-pointer"
+              >
+                <img
+                  src={capturedPhoto}
+                  alt="Captured"
+                  className="w-full h-full object-cover"
                 />
               </div>
-            </div>
-            <span className="text-white text-xs leading-relaxed px-3">*Enter the verification code sent to +91 {mobileNumber}</span>
-          </div>
-
-          {/* Timer and Resend OTP */}
-          <div className="flex flex-col items-center mt-4 gap-2">
-            {otpTimer > 0 ? (
-              <span className="text-white text-sm">
-                OTP expires in: <span className="font-semibold">{formatTime(otpTimer)}</span>
-              </span>
             ) : (
-              <span className="text-red-300 text-sm font-semibold">OTP has expired</span>
+              <div
+                onClick={() => {
+                  console.log("Upload box clicked");
+                  openPreCamera();
+                }}
+                className="w-[279px] h-[100px] backdrop-blur-xs rounded-[11px] border border-dashed border-white flex items-center justify-center gap-3 mb-4 cursor-pointer"
+                style={{ borderWidth: "0.94px" }}
+              >
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                  <Image
+                    src="/camera.png"
+                    alt="Camera"
+                    width={32}
+                    height={32}
+                  />
+                </div>
+                <span className="text-white text-sm">Upload your photo</span>
+              </div>
             )}
 
-            <button
-              id="btn-resend-otp"
-              onClick={handleResendOtp}
-              disabled={isResendingOtp || otpTimer > 0}
-              className={`text-sm underline ${
-                otpTimer > 0 ? 'text-gray-400 cursor-not-allowed' : 'text-white hover:text-gray-200'
-              }`}
-            >
-              {isResendingOtp ? (
-                <span className="flex items-center gap-1">
-                  <Loader2 size={14} className="animate-spin" />
-                  Resending...
+            {/* Mobile input */}
+            <div className="relative self-stretch">
+              <div className="relative px-5 py-2.5 overflow-hidden">
+                <Image
+                  className="absolute inset-0 object-cover pointer-events-none z-0 w-full h-full"
+                  src="/texture.png"
+                  alt=""
+                  width={288}
+                  height={60}
+                  quality={100}
+                />
+                <div className="relative z-10 flex items-center gap-2">
+                  <span className="text-sm text-primary font-medium">+91</span>
+                  <input
+                    type="tel"
+                    value={mobileNumber}
+                    onChange={handleMobileChange}
+                    placeholder="Enter Your WhatsApp Number"
+                    className="w-full bg-transparent py-3 text-sm text-primary placeholder-primary/60 outline-none"
+                    maxLength={10}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showOtpScreen && (
+          <div
+            className={`flex flex-col  items-center w-full transition-all duration-700 ease-out delay-200 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+          >
+            {/* OTP input */}
+            <div className="relative self-stretch">
+              <div className="relative px-5 py-2.5 overflow-hidden">
+                <Image
+                  className="absolute inset-0 object-cover pointer-events-none z-0 w-full h-full"
+                  src="/texture.png"
+                  alt=""
+                  width={288}
+                  height={60}
+                  quality={100}
+                />
+                <div className="relative z-10 flex items-center gap-2">
+                  <input
+                    type="tel"
+                    value={otpCode}
+                    onChange={handleOtpChange}
+                    placeholder="Enter 6 digit verification code"
+                    className="w-full bg-transparent py-3 text-sm text-primary placeholder-primary/60 outline-none text-center tracking-widest"
+                    maxLength={6}
+                  />
+                </div>
+              </div>
+              <span className="text-white text-xs leading-relaxed px-3">
+                *Enter the verification code sent to +91 {mobileNumber}
+              </span>
+            </div>
+
+            {/* Timer and Resend OTP */}
+            <div className="flex flex-col items-center mt-4 gap-2">
+              {otpTimer > 0 ? (
+                <span className="text-white text-sm">
+                  OTP expires in:{" "}
+                  <span className="font-semibold">{formatTime(otpTimer)}</span>
                 </span>
               ) : (
-                otpTimer > 0 ? `Resend OTP` : 'Resend OTP'
+                <span className="text-red-300 text-sm font-semibold">
+                  OTP has expired
+                </span>
               )}
-            </button>
+
+              <button
+                id="btn-resend-otp"
+                onClick={handleResendOtp}
+                disabled={isResendingOtp || otpTimer > 0}
+                className={`text-sm underline ${
+                  otpTimer > 0
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "text-white hover:text-gray-200"
+                }`}
+              >
+                {isResendingOtp ? (
+                  <span className="flex items-center gap-1">
+                    <Loader2 size={14} className="animate-spin" />
+                    Resending...
+                  </span>
+                ) : otpTimer > 0 ? (
+                  `Resend OTP`
+                ) : (
+                  "Resend OTP"
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
-      {showMobileInput && !showOtpScreen && (
-        <label className={`flex items-start   gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-32'}`}>
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-1 w-4 h-4 accent-black "
-          />
-          <span className="text-white text-[10px] font-normal">
-           &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions. All submitted content (text & image) is subject to AI analysis and manual review before video generation. This is valid for a limited time period.&quot;{' '}
-            <a id="link-terms" href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Link</a>
-          </span>
-        </label>
-      )}
+        {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
+        {showMobileInput && !showOtpScreen && (
+          <label
+            className={`flex items-start   gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+          >
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 w-4 h-4 accent-black "
+            />
+            <span className="text-white text-[10px] font-normal">
+              &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions.
+              All submitted content (text & image) is subject to AI analysis and
+              manual review before video generation. This is valid for a limited
+              time period.&quot;{" "}
+              <a
+                id="link-terms"
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Link
+              </a>
+            </span>
+          </label>
+        )}
 
-      {/* Button inside scroll area - animate from bottom */}
-      <button
-        id={showOtpScreen ? 'btn-verify-otp' : (showMobileInput ? 'btn-send-otp' : 'btn-next-step')}
-        data-action={showOtpScreen ? 'verify-otp' : (showMobileInput ? 'send-otp' : 'next-step')}
-        onClick={showOtpScreen ? handleSubmitOtp : (showMobileInput ? handleGetVerificationCode : handleNextClick)}
-        disabled={isSubmitting || isVerifyingOtp}
-        className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 z-10 transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? 'translate-y-0 delay-300' : 'opacity-0 translate-y-32 delay-300'} ${
-          showOtpScreen ? 'btn-otp-submit' : (showMobileInput ? 'btn-mobile-submit' : 'btn-form-next')
-        } ${
-          pageLoaded
-            ? (showOtpScreen
-                ? (canSubmitOtp && !isVerifyingOtp ? 'opacity-100' : 'opacity-40')
+        {/* Button inside scroll area - animate from bottom */}
+        <button
+          id={
+            showOtpScreen
+              ? "btn-verify-otp"
+              : showMobileInput
+                ? "btn-send-otp"
+                : "btn-next-step"
+          }
+          data-action={
+            showOtpScreen
+              ? "verify-otp"
+              : showMobileInput
+                ? "send-otp"
+                : "next-step"
+          }
+          onClick={
+            showOtpScreen
+              ? handleSubmitOtp
+              : showMobileInput
+                ? handleGetVerificationCode
+                : handleNextClick
+          }
+          disabled={isSubmitting || isVerifyingOtp}
+          className={`group absolute bottom-12 px-12 flex items-stretch w-full outline-none mt-6 z-10 transition-[opacity,transform] duration-700 ease-out ${pageLoaded ? "translate-y-0 delay-300" : "opacity-0 translate-y-32 delay-300"} ${
+            showOtpScreen
+              ? "btn-otp-submit"
+              : showMobileInput
+                ? "btn-mobile-submit"
+                : "btn-form-next"
+          } ${
+            pageLoaded
+              ? showOtpScreen
+                ? canSubmitOtp && !isVerifyingOtp
+                  ? "opacity-100"
+                  : "opacity-40"
                 : showMobileInput
-                  ? (canGetVerificationCode && !isSubmitting ? 'opacity-100' : 'opacity-40')
-                  : (allFieldsFilled ? 'opacity-100' : 'opacity-40'))
-            : ''
-        }`}
-      >
-        {/* Main button body */}
-        <div className="relative w-full rounded-lg border-4 border-r-0 border-[#FCAAA4] bg-white py-2  flex items-center justify-center gap-8">
-          <span className="text-sm md:text-base font-semibold text-[#BE1E2D] text-center flex items-center gap-2">
-            {isSubmitting || isVerifyingOtp ? (
-              <>
-                <Loader2 size={20} className="animate-spin" />
-                {isVerifyingOtp ? 'Verifying...' : 'Submitting...'}
-              </>
-            ) : (
-              showOtpScreen ? 'Submit →' : (showMobileInput ? 'Send Verification Code →' : 'Next →')
-            )}
-          </span>
-        </div>
+                  ? canGetVerificationCode && !isSubmitting
+                    ? "opacity-100"
+                    : "opacity-40"
+                  : allFieldsFilled
+                    ? "opacity-100"
+                    : "opacity-40"
+              : ""
+          }`}
+        >
+          {/* Main button body */}
+          <div className="relative w-full rounded-lg border-4 border-r-0 border-[#FCAAA4] bg-white py-2  flex items-center justify-center gap-8">
+            <span className="text-sm md:text-base font-semibold text-[#BE1E2D] text-center flex items-center gap-2">
+              {isSubmitting || isVerifyingOtp ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  {isVerifyingOtp ? "Verifying..." : "Submitting..."}
+                </>
+              ) : showOtpScreen ? (
+                "Submit →"
+              ) : showMobileInput ? (
+                "Send Verification Code →"
+              ) : (
+                "Next →"
+              )}
+            </span>
+          </div>
 
-        {/* Arrow point - 3% taller than button */}
-        <div className="relative flex items-stretch -ml-2 -my-[.1%]">
-          {/* Outer border layer */}
-          <div className="w-14 bg-[#FCAAA4] relative" style={{ clipPath: 'polygon(0 0, 100% 50%, 0 100%)' }}></div>
-          {/* Inner white layer - no border on base, thicker equal borders on diagonals */}
-          <div className="absolute inset-0 bg-white" style={{ clipPath: 'polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))' }}></div>
-        </div>
-      </button>
+          {/* Arrow point - 3% taller than button */}
+          <div className="relative flex items-stretch -ml-2 -my-[.1%]">
+            {/* Outer border layer */}
+            <div
+              className="w-14 bg-[#FCAAA4] relative"
+              style={{ clipPath: "polygon(0 0, 100% 50%, 0 100%)" }}
+            ></div>
+            {/* Inner white layer - no border on base, thicker equal borders on diagonals */}
+            <div
+              className="absolute inset-0 bg-white"
+              style={{
+                clipPath:
+                  "polygon(0 4px, calc(100% - 5.66px) 50%, 0 calc(100% - 4px))",
+              }}
+            ></div>
+          </div>
+        </button>
       </div>
 
       {/* Pre-Camera Instruction Modal */}
@@ -849,9 +995,11 @@ function Input() {
                     className="rounded-lg object-cover"
                   />
                   {/* Icon in bottom-right corner */}
-                  <div className={`absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${
-                    num === 1 ? 'bg-green-500' : 'bg-red-500'
-                  }`}>
+                  <div
+                    className={`absolute bottom-2 right-2 w-6 h-6 rounded-full flex items-center justify-center ${
+                      num === 1 ? "bg-green-500" : "bg-red-500"
+                    }`}
+                  >
                     {num === 1 ? (
                       <Check size={14} className="text-white" />
                     ) : (
@@ -879,7 +1027,11 @@ function Input() {
           {/* Close button */}
           <button
             id="btn-close-camera"
-            onClick={() => { setPreviewPhoto(null); setPreviewPhotoFile(null); closeCamera() }}
+            onClick={() => {
+              setPreviewPhoto(null);
+              setPreviewPhotoFile(null);
+              closeCamera();
+            }}
             className="absolute top-4 right-4  text-white z-20"
             disabled={isVerifyingPhoto}
           >
@@ -894,12 +1046,18 @@ function Input() {
               </div>
 
               <div className="w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed border-white relative overflow-hidden">
-                <img src={previewPhoto} alt="Preview" className="w-full h-full object-cover" />
+                <img
+                  src={previewPhoto}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
                 {/* Verifying overlay */}
                 {isVerifyingPhoto && (
                   <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center">
                     <Loader2 size={48} className="text-white animate-spin" />
-                    <span className="text-white mt-4 text-sm">Verifying photo...</span>
+                    <span className="text-white mt-4 text-sm">
+                      Verifying photo...
+                    </span>
                   </div>
                 )}
               </div>
@@ -926,7 +1084,7 @@ function Input() {
                       Verifying...
                     </>
                   ) : (
-                    'Confirm'
+                    "Confirm"
                   )}
                 </button>
               </div>
@@ -934,18 +1092,20 @@ function Input() {
           ) : (
             <>
               {/* Face detection status */}
-              <div className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
-                !modelsLoaded
-                  ? 'bg-yellow-500/20 text-yellow-400'
-                  : faceDetected
-                    ? 'bg-green-500/20 text-green-400'
-                    : 'bg-red-500/20 text-red-400'
-              }`}>
+              <div
+                className={`mb-4 px-4 py-2 rounded-full text-sm font-medium ${
+                  !modelsLoaded
+                    ? "bg-yellow-500/20 text-yellow-400"
+                    : faceDetected
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-red-500/20 text-red-400"
+                }`}
+              >
                 {!modelsLoaded
-                  ? 'Loading face detection...'
+                  ? "Loading face detection..."
                   : faceDetected
-                    ? '✓ Face detected - Ready to capture'
-                    : 'Position your face in the box'}
+                    ? "✓ Face detected - Ready to capture"
+                    : "Position your face in the box"}
               </div>
 
               {/* Camera viewfinder with dynamic border color - oval on mobile, square on desktop */}
@@ -953,10 +1113,10 @@ function Input() {
                 <div
                   className={`w-64 h-80 rounded-full md:size-80 md:rounded-[11px] border-2 border-dashed relative overflow-hidden transition-colors duration-300 ${
                     !modelsLoaded
-                      ? 'border-yellow-400'
+                      ? "border-yellow-400"
                       : faceDetected
-                        ? 'border-green-400'
-                        : 'border-red-400'
+                        ? "border-green-400"
+                        : "border-red-400"
                   }`}
                 >
                   <video
@@ -969,7 +1129,9 @@ function Input() {
                 </div>
 
                 {/* Smile badge - shown while face is detected */}
-                <div className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-sm font-medium shadow-lg transition-all duration-300 whitespace-nowrap ${faceDetected ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`}>
+                <div
+                  className={`absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-green-500 text-white text-sm font-medium shadow-lg transition-all duration-300 whitespace-nowrap ${faceDetected ? "opacity-100 scale-100" : "opacity-0 scale-75"}`}
+                >
                   Let&apos;s see you smile!
                 </div>
               </div>
@@ -980,10 +1142,14 @@ function Input() {
                 onClick={capturePhoto}
                 disabled={!faceDetected}
                 className={`mt-8 w-16 h-16 bg-white rounded-full flex items-center justify-center transition-opacity ${
-                  !faceDetected ? 'opacity-40 cursor-not-allowed' : 'opacity-100'
+                  !faceDetected
+                    ? "opacity-40 cursor-not-allowed"
+                    : "opacity-100"
                 }`}
               >
-                <div className={`w-14 h-14 border-4 rounded-full ${faceDetected ? 'border-green-500' : 'border-gray-400'}`} />
+                <div
+                  className={`w-14 h-14 border-4 rounded-full ${faceDetected ? "border-green-500" : "border-gray-400"}`}
+                />
               </button>
 
               {/* Instructions list */}
@@ -998,7 +1164,7 @@ function Input() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default Input
