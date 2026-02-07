@@ -487,6 +487,11 @@ function Input() {
       // Wait for 10 minutes before making the API call
       // await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
 
+      //     return {
+      //   valid: true,
+      //   message: "Photo validated successfully",
+      // };
+
       const response = await fetch(
         `${API_BASE_URL}/photo-validation/check_photo`,
         {
@@ -499,7 +504,7 @@ function Input() {
 
       if (response.ok && data.valid) {
         if (data.validation_token) {
-          setValidationToken(data.validation_token)
+          setValidationToken(data.validation_token);
         }
         return {
           valid: true,
@@ -707,7 +712,7 @@ function Input() {
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-              items={["Romantic", "Rock"]}
+              items={["Romantic", "Rock", "Rap"]}
               placeholder="What's your vibe?"
               value={vibe}
               onSelect={(item) => setVibe(item)}
