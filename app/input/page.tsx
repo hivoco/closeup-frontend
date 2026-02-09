@@ -1,509 +1,569 @@
-'use client'
-import { useState, useRef, useCallback, useEffect } from 'react'
-import Image from 'next/image'
-import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
-import { toast } from 'react-toastify'
-import Dropdown from '../components/Dropdown'
-import { useRouter } from 'next/navigation'
-import * as faceapi from 'face-api.js'
+"use client";
+import { useState, useRef, useCallback, useEffect } from "react";
+import Image from "next/image";
+import { ChevronLeft, X, Check, Loader2 } from "lucide-react";
+import { toast } from "react-toastify";
+import Dropdown from "../components/Dropdown";
+import { useRouter } from "next/navigation";
+import * as faceapi from "face-api.js";
 
-
-const API_BASE_URL = 'https://api.closeuplovetunes.in/api/v1'
+const API_BASE_URL = "https://api.closeuplovetunes.in/api/v1";
 // const API_BASE_URL = 'http://localhost:8000/api/v1'
 
 function Input() {
-  const router = useRouter()
-  const [loveAbout, setLoveAbout] = useState('')
-  const [relationship, setRelationship] = useState('')
-  const [vibe, setVibe] = useState('')
-  const [voice, setVoice] = useState('')
-  const [showMobileInput, setShowMobileInput] = useState(false)
-  const [mobileNumber, setMobileNumber] = useState('')
-  const [agreedToTerms, setAgreedToTerms] = useState(false)
-  const [showCamera, setShowCamera] = useState(false)
-  const [showPreCamera, setShowPreCamera] = useState(false)
-  const [preCameraProgress, setPreCameraProgress] = useState(0)
-  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null)
-  const [capturedPhotoFile, setCapturedPhotoFile] = useState<File | null>(null)
-  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
-  const [previewPhotoFile, setPreviewPhotoFile] = useState<File | null>(null)
-  const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false)
-  const [showOtpScreen, setShowOtpScreen] = useState(false)
-  const [otpCode, setOtpCode] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false)
-  const [isResendingOtp, setIsResendingOtp] = useState(false)
-  const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
-  const [jobId, setJobId] = useState<number | null>(null)
-  const [validationToken, setValidationToken] = useState<string | null>(null)
-  const [photoValidationRequired, setPhotoValidationRequired] = useState(true)
-  const [isShortScreen, setIsShortScreen] = useState(false)
-  const [isMiniScreen, setIsMiniScreen] = useState(false)
-  const [pageLoaded, setPageLoaded] = useState(false)
-  const [faceDetected, setFaceDetected] = useState(false)
-  const [modelsLoaded, setModelsLoaded] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const router = useRouter();
+  const [loveAbout, setLoveAbout] = useState("");
+  const [relationship, setRelationship] = useState("");
+  const [vibe, setVibe] = useState("");
+  const [voice, setVoice] = useState("");
+  const [showMobileInput, setShowMobileInput] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToMarketing, setAgreedToMarketing] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showPreCamera, setShowPreCamera] = useState(false);
+  const [preCameraProgress, setPreCameraProgress] = useState(0);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [capturedPhotoFile, setCapturedPhotoFile] = useState<File | null>(null);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [previewPhotoFile, setPreviewPhotoFile] = useState<File | null>(null);
+  const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false);
+  const [showOtpScreen, setShowOtpScreen] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0); // Countdown timer in seconds
+  const [jobId, setJobId] = useState<number | null>(null);
+  const [validationToken, setValidationToken] = useState<string | null>(null);
+  const [photoValidationRequired, setPhotoValidationRequired] = useState(true);
+  const [isShortScreen, setIsShortScreen] = useState(false);
+  const [isMiniScreen, setIsMiniScreen] = useState(false);
+  const [pageLoaded, setPageLoaded] = useState(false);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if photo validation is required (admin toggle)
   useEffect(() => {
     const checkPhotoValidation = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/settings/photo-validation-status`)
+        const response = await fetch(
+          `${API_BASE_URL}/settings/photo-validation-status`,
+        );
         if (response.ok) {
-          const data = await response.json()
-          setPhotoValidationRequired(data.enabled)
+          const data = await response.json();
+          setPhotoValidationRequired(data.enabled);
         }
       } catch {
         // Default to required if check fails
-        setPhotoValidationRequired(true)
+        setPhotoValidationRequired(true);
       }
-    }
-    checkPhotoValidation()
-  }, [])
+    };
+    checkPhotoValidation();
+  }, []);
 
   // Check screen height
   useEffect(() => {
     const checkScreenHeight = () => {
-      setIsShortScreen(window.innerHeight < 700)
-      setIsMiniScreen(window.innerHeight < 630)
-    }
+      setIsShortScreen(window.innerHeight < 700);
+      setIsMiniScreen(window.innerHeight < 630);
+    };
 
-    checkScreenHeight()
-    window.addEventListener('resize', checkScreenHeight)
+    checkScreenHeight();
+    window.addEventListener("resize", checkScreenHeight);
 
-    return () => window.removeEventListener('resize', checkScreenHeight)
-  }, [])
+    return () => window.removeEventListener("resize", checkScreenHeight);
+  }, []);
 
   // Trigger entrance animations on mount
   useEffect(() => {
     // Small delay to ensure DOM is ready
     const timer = setTimeout(() => {
-      setPageLoaded(true)
-    }, 50)
-    return () => clearTimeout(timer)
-  }, [])
+      setPageLoaded(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // OTP countdown timer
   useEffect(() => {
-    if (otpTimer <= 0) return
+    if (otpTimer <= 0) return;
 
     const interval = setInterval(() => {
-      setOtpTimer((prev) => prev - 1)
-    }, 1000)
+      setOtpTimer((prev) => prev - 1);
+    }, 1000);
 
-    return () => clearInterval(interval)
-  }, [otpTimer])
+    return () => clearInterval(interval);
+  }, [otpTimer]);
 
   // Start timer when OTP screen is shown
   useEffect(() => {
     if (showOtpScreen) {
-      setOtpTimer(300) // 5 minutes = 300 seconds
+      setOtpTimer(300); // 5 minutes = 300 seconds
     }
-  }, [showOtpScreen])
+  }, [showOtpScreen]);
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
-  const allFieldsFilled = loveAbout && relationship && vibe && voice
-  const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms
-  const canSubmitOtp = otpCode.length === 6
+  const allFieldsFilled = loveAbout && relationship && vibe && voice;
+  const canGetVerificationCode =
+    capturedPhoto && mobileNumber.length === 10 && agreedToTerms && agreedToMarketing;
+  const canSubmitOtp = otpCode.length === 6;
 
   const handleNextClick = () => {
     if (!allFieldsFilled) {
       // Show specific error for missing fields
       if (!loveAbout) {
-        toast.error('Please select what you love about your partner')
+        toast.error("Please select what you love about your partner");
       } else if (!relationship) {
-        toast.error('Please select your relationship type')
+        toast.error("Please select your relationship type");
       } else if (!vibe) {
-        toast.error('Please select your vibe')
+        toast.error("Please select your vibe");
       } else if (!voice) {
-        toast.error('Please select your preferred voice')
+        toast.error("Please select your preferred voice");
       }
-      return
+      return;
     }
     if (!showMobileInput) {
-      setShowMobileInput(true)
+      setShowMobileInput(true);
     }
-  }
+  };
 
   // Submit video form and send OTP
   const handleGetVerificationCode = async () => {
     if (!capturedPhoto || !capturedPhotoFile) {
-      toast.error('Please upload your photo')
-      return
+      toast.error("Please upload your photo");
+      return;
     }
     if (mobileNumber.length !== 10) {
-      toast.error('Please enter your 10-digit WhatsApp number')
-      return
+      toast.error("Please enter your 10-digit WhatsApp number");
+      return;
     }
     if (!agreedToTerms) {
-      toast.error('Please accept the terms and conditions')
-      return
+      toast.error("Please accept the terms and conditions");
+      return;
+    }
+    if (!agreedToMarketing) {
+      toast.error("Please consent to receiving marketing communications");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
-      const formData = new FormData()
-      formData.append('mobile_number', mobileNumber)
-      formData.append('gender', voice === 'Male voice' ? 'male' : 'female')
-      formData.append('attribute_love', loveAbout)
-      formData.append('relationship_status', relationship)
-      formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
-      formData.append('photo', capturedPhotoFile)
-      formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
-      formData.append('validation_token', validationToken || '')
+      const formData = new FormData();
+      formData.append("mobile_number", mobileNumber);
+      formData.append("gender", voice === "Male voice" ? "male" : "female");
+      formData.append("attribute_love", loveAbout);
+      formData.append("relationship_status", relationship);
+      formData.append(
+        "vibe",
+        vibe === "Rock" ? "rock" : vibe === "Rap" ? "rap" : "romantic",
+      );
+      formData.append("photo", capturedPhotoFile);
+      formData.append("terms_accepted", agreedToTerms ? "true" : "false");
+      formData.append("validation_token", validationToken || "");
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
-        method: 'POST',
+        method: "POST",
         body: formData,
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 403) {
-          toast.error('You have reached the maximum limit of 2 videos')
+          toast.error("You have reached the maximum limit of 2 videos");
         } else {
-          toast.error(data.detail || 'Failed to submit. Please try again.')
+          toast.error(data.detail || "Failed to submit. Please try again.");
         }
-        return
+        return;
       }
 
       // Save job ID for later
       if (data.job_id) {
-        setJobId(data.job_id)
+        setJobId(data.job_id);
       }
 
-      if (data.status === 'otp_sent') {
-        toast.success('OTP sent to your WhatsApp number!')
-        setShowOtpScreen(true)
-      } else if (data.status === 'video_created') {
-        toast.success('Your video is being processed!')
-        router.push('/thank-you')
-      } else if (data.status === 'pending') {
-        toast.info(data.message || 'Your previous video is still being processed.')
+      if (data.status === "otp_sent") {
+        toast.success("OTP sent to your WhatsApp number!");
+        setShowOtpScreen(true);
+      } else if (data.status === "video_created") {
+        toast.success("Your video is being processed!");
+        router.push("/thank-you");
+      } else if (data.status === "pending") {
+        toast.info(
+          data.message || "Your previous video is still being processed.",
+        );
       }
     } catch (error) {
-      console.error('Submit error:', error)
-      toast.error('Something went wrong. Please try again.')
+      console.error("Submit error:", error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   // Verify OTP
   const handleSubmitOtp = async () => {
     if (otpCode.length !== 6) {
-      toast.error('Please enter the 6-digit OTP code')
-      return
+      toast.error("Please enter the 6-digit OTP code");
+      return;
     }
 
-    setIsVerifyingOtp(true)
+    setIsVerifyingOtp(true);
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           mobile_number: mobileNumber,
           otp: otpCode,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.detail || 'Invalid OTP. Please try again.')
-        return
+        toast.error(data.detail || "Invalid OTP. Please try again.");
+        return;
       }
 
-      if (data.status === 'verified') {
-        toast.success('OTP verified successfully!')
+      if (data.status === "verified") {
+        toast.success("OTP verified successfully!");
         if (data.job_id) {
-          setJobId(data.job_id)
+          setJobId(data.job_id);
         }
-        router.push('/thank-you')
+        router.push("/thank-you");
       }
     } catch (error) {
-      console.error('OTP verification error:', error)
-      toast.error('Failed to verify OTP. Please try again.')
+      console.error("OTP verification error:", error);
+      toast.error("Failed to verify OTP. Please try again.");
     } finally {
-      setIsVerifyingOtp(false)
+      setIsVerifyingOtp(false);
     }
-  }
+  };
 
   // Resend OTP
   const handleResendOtp = async () => {
     if (otpTimer > 0) {
-      toast.info(`Please wait ${formatTime(otpTimer)} before resending`)
-      return
+      toast.info(`Please wait ${formatTime(otpTimer)} before resending`);
+      return;
     }
 
-    setIsResendingOtp(true)
-    setOtpCode('')
+    setIsResendingOtp(true);
+    setOtpCode("");
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           mobile_number: mobileNumber,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        if (data.detail?.includes('still valid')) {
+        if (data.detail?.includes("still valid")) {
           // Extract remaining seconds from error if available
-          toast.info(data.detail || 'OTP is still valid. Please check your WhatsApp.')
+          toast.info(
+            data.detail || "OTP is still valid. Please check your WhatsApp.",
+          );
         } else {
-          toast.error(data.detail || 'Failed to resend OTP. Please try again.')
+          toast.error(data.detail || "Failed to resend OTP. Please try again.");
         }
-        return
+        return;
       }
 
-      toast.success('New OTP sent successfully!')
-      setOtpTimer(data.expires_in_minutes ? data.expires_in_minutes * 60 : 300)
+      toast.success("New OTP sent successfully!");
+      setOtpTimer(data.expires_in_minutes ? data.expires_in_minutes * 60 : 300);
     } catch (error) {
-      console.error('Resend OTP error:', error)
-      toast.error('Failed to resend OTP. Please try again.')
+      console.error("Resend OTP error:", error);
+      toast.error("Failed to resend OTP. Please try again.");
     } finally {
-      setIsResendingOtp(false)
+      setIsResendingOtp(false);
     }
-  }
+  };
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '')
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 6) {
-      setOtpCode(value)
+      setOtpCode(value);
     }
-  }
+  };
 
   const handleBackClick = () => {
     if (showOtpScreen) {
-      setShowOtpScreen(false)
+      setShowOtpScreen(false);
     } else {
-      setShowMobileInput(false)
+      setShowMobileInput(false);
     }
-  }
+  };
 
   const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '')
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 10) {
-      setMobileNumber(value)
+      setMobileNumber(value);
     }
-  }
+  };
 
   // Show pre-camera instruction screen first
   const openPreCamera = () => {
-    console.log('Opening pre-camera screen')
-    setShowPreCamera(true)
-    setPreCameraProgress(0)
+    console.log("Opening pre-camera screen");
+    setShowPreCamera(true);
+    setPreCameraProgress(0);
 
     // Animate progress bar over 2 seconds
-    const startTime = Date.now()
-    const duration = 4000
+    const startTime = Date.now();
+    const duration = 4000;
 
     const animateProgress = () => {
-      const elapsed = Date.now() - startTime
-      const progress = Math.min((elapsed / duration) * 100, 100)
-      setPreCameraProgress(progress)
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min((elapsed / duration) * 100, 100);
+      setPreCameraProgress(progress);
 
       if (elapsed < duration) {
-        requestAnimationFrame(animateProgress)
+        requestAnimationFrame(animateProgress);
       } else {
         // After 2 seconds, open actual camera
-        setShowPreCamera(false)
-        openCamera()
+        setShowPreCamera(false);
+        openCamera();
       }
-    }
+    };
 
-    requestAnimationFrame(animateProgress)
-  }
+    requestAnimationFrame(animateProgress);
+  };
 
   // Open camera - get stream first, then show modal
   const openCamera = async () => {
-    console.log('openCamera called')
+    console.log("openCamera called");
 
     // Check if mediaDevices is available
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      alert('Camera not supported. Please use HTTPS or localhost.')
-      return
+      alert("Camera not supported. Please use HTTPS or localhost.");
+      return;
     }
 
     try {
-      console.log('Requesting camera permission...')
+      console.log("Requesting camera permission...");
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
-        audio: false
-      })
-      console.log('Stream obtained:', stream)
-      console.log('Video tracks:', stream.getVideoTracks())
-      streamRef.current = stream
-      setShowCamera(true)
+        video: { facingMode: "user", width: 640, height: 480 },
+        audio: false,
+      });
+      console.log("Stream obtained:", stream);
+      console.log("Video tracks:", stream.getVideoTracks());
+      streamRef.current = stream;
+      setShowCamera(true);
     } catch (err) {
-      const error = err as DOMException
-      console.error('Camera error:', error.name, error.message)
+      const error = err as DOMException;
+      console.error("Camera error:", error.name, error.message);
 
-      let message = 'Unable to access camera.'
-      if (error.name === 'NotAllowedError') {
-        message = 'Camera permission denied. Check browser settings.'
-      } else if (error.name === 'NotFoundError') {
-        message = 'No camera found on this device.'
-      } else if (error.name === 'NotReadableError') {
-        message = 'Camera in use by another app.'
-      } else if (error.name === 'SecurityError') {
-        message = 'Camera requires HTTPS or localhost.'
+      let message = "Unable to access camera.";
+      if (error.name === "NotAllowedError") {
+        message = "Camera permission denied. Check browser settings.";
+      } else if (error.name === "NotFoundError") {
+        message = "No camera found on this device.";
+      } else if (error.name === "NotReadableError") {
+        message = "Camera in use by another app.";
+      } else if (error.name === "SecurityError") {
+        message = "Camera requires HTTPS or localhost.";
       }
-      alert(message)
+      alert(message);
     }
-  }
+  };
 
   // Load face detection models
   const loadFaceDetectionModels = useCallback(async () => {
-    if (modelsLoaded) return
+    if (modelsLoaded) return;
     try {
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models')
-      ])
-      setModelsLoaded(true)
-      console.log('Face detection models loaded')
+        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+      ]);
+      setModelsLoaded(true);
+      console.log("Face detection models loaded");
     } catch (error) {
-      console.error('Error loading face detection models:', error)
+      console.error("Error loading face detection models:", error);
     }
-  }, [modelsLoaded])
+  }, [modelsLoaded]);
 
   // Start face detection on video stream
   const startFaceDetection = useCallback(() => {
-    if (!videoRef.current || detectionIntervalRef.current || !modelsLoaded) return
+    if (!videoRef.current || detectionIntervalRef.current || !modelsLoaded)
+      return;
 
     detectionIntervalRef.current = setInterval(async () => {
-      if (!videoRef.current || videoRef.current.paused || videoRef.current.ended) return
+      if (
+        !videoRef.current ||
+        videoRef.current.paused ||
+        videoRef.current.ended
+      )
+        return;
 
       try {
         // Detect faces with landmarks to verify full face is visible
         const detections = await faceapi
-          .detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
-          .withFaceLandmarks()
+          .detectAllFaces(
+            videoRef.current,
+            new faceapi.TinyFaceDetectorOptions({
+              inputSize: 224,
+              scoreThreshold: 0.5,
+            }),
+          )
+          .withFaceLandmarks();
 
         // videoRef may have become null while detectAllFaces was running
-        if (!videoRef.current) return
+        if (!videoRef.current) return;
 
         if (detections.length > 0) {
-          const detection = detections[0]
-          const videoWidth = videoRef.current.videoWidth
-          const videoHeight = videoRef.current.videoHeight
-          const box = detection.detection.box
-          const landmarks = detection.landmarks
+          const detection = detections[0];
+          const videoWidth = videoRef.current.videoWidth;
+          const videoHeight = videoRef.current.videoHeight;
+          const box = detection.detection.box;
+          const landmarks = detection.landmarks;
 
           // Check if face is reasonably centered and sized
-          const faceWidthRatio = box.width / videoWidth
-          const faceCenterX = box.x + box.width / 2
-          const faceCenterY = box.y + box.height / 2
-          const isCenteredX = faceCenterX > videoWidth * 0.25 && faceCenterX < videoWidth * 0.75
-          const isCenteredY = faceCenterY > videoHeight * 0.15 && faceCenterY < videoHeight * 0.85
-          const isGoodSize = faceWidthRatio > 0.2 && faceWidthRatio < 0.8
+          const faceWidthRatio = box.width / videoWidth;
+          const faceCenterX = box.x + box.width / 2;
+          const faceCenterY = box.y + box.height / 2;
+          const isCenteredX =
+            faceCenterX > videoWidth * 0.25 && faceCenterX < videoWidth * 0.75;
+          const isCenteredY =
+            faceCenterY > videoHeight * 0.15 &&
+            faceCenterY < videoHeight * 0.85;
+          const isGoodSize = faceWidthRatio > 0.2 && faceWidthRatio < 0.8;
 
           // Check if key facial features are detected (full face visible)
           // Landmarks: 0-16 = jaw, 17-21 = left eyebrow, 22-26 = right eyebrow,
           // 27-35 = nose, 36-41 = left eye, 42-47 = right eye, 48-67 = mouth
-          const leftEye = landmarks.getLeftEye()
-          const rightEye = landmarks.getRightEye()
-          const nose = landmarks.getNose()
-          const mouth = landmarks.getMouth()
+          const leftEye = landmarks.getLeftEye();
+          const rightEye = landmarks.getRightEye();
+          const nose = landmarks.getNose();
+          const mouth = landmarks.getMouth();
 
           // Verify all key features are detected and within frame
-          const hasLeftEye = leftEye.length > 0 && leftEye.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
-          const hasRightEye = rightEye.length > 0 && rightEye.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
-          const hasNose = nose.length > 0 && nose.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
-          const hasMouth = mouth.length > 0 && mouth.every(p => p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight)
+          const hasLeftEye =
+            leftEye.length > 0 &&
+            leftEye.every(
+              (p) =>
+                p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight,
+            );
+          const hasRightEye =
+            rightEye.length > 0 &&
+            rightEye.every(
+              (p) =>
+                p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight,
+            );
+          const hasNose =
+            nose.length > 0 &&
+            nose.every(
+              (p) =>
+                p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight,
+            );
+          const hasMouth =
+            mouth.length > 0 &&
+            mouth.every(
+              (p) =>
+                p.x > 0 && p.x < videoWidth && p.y > 0 && p.y < videoHeight,
+            );
 
-          const isFullFaceVisible = hasLeftEye && hasRightEye && hasNose && hasMouth
+          const isFullFaceVisible =
+            hasLeftEye && hasRightEye && hasNose && hasMouth;
 
-          setFaceDetected(isCenteredX && isCenteredY && isGoodSize && isFullFaceVisible)
+          setFaceDetected(
+            isCenteredX && isCenteredY && isGoodSize && isFullFaceVisible,
+          );
         } else {
-          setFaceDetected(false)
+          setFaceDetected(false);
         }
       } catch (error) {
-        console.error('Face detection error:', error)
+        console.error("Face detection error:", error);
       }
-    }, 200) // Run detection every 200ms
-  }, [modelsLoaded])
+    }, 200); // Run detection every 200ms
+  }, [modelsLoaded]);
 
   const closeCamera = useCallback(() => {
     // Stop face detection
     if (detectionIntervalRef.current) {
-      clearInterval(detectionIntervalRef.current)
-      detectionIntervalRef.current = null
+      clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop())
-      streamRef.current = null
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
-    setShowCamera(false)
-    setFaceDetected(false)
-  }, [])
+    setShowCamera(false);
+    setFaceDetected(false);
+  }, []);
 
   // Connect stream to video element when modal opens or when returning from preview
   useEffect(() => {
-    if (!showCamera || !streamRef.current || previewPhoto) return
+    if (!showCamera || !streamRef.current || previewPhoto) return;
 
-    const video = videoRef.current
+    const video = videoRef.current;
     if (!video) {
-      console.error('Video element not available')
-      return
+      console.error("Video element not available");
+      return;
     }
 
-    console.log('Connecting stream to video element')
-    video.srcObject = streamRef.current
+    console.log("Connecting stream to video element");
+    video.srcObject = streamRef.current;
 
     // Load models and start face detection when video is ready
     const handleVideoPlay = async () => {
-      await loadFaceDetectionModels()
-      startFaceDetection()
-    }
+      await loadFaceDetectionModels();
+      startFaceDetection();
+    };
 
-    video.addEventListener('playing', handleVideoPlay)
+    video.addEventListener("playing", handleVideoPlay);
 
     return () => {
-      video.removeEventListener('playing', handleVideoPlay)
-    }
-  }, [showCamera, previewPhoto, loadFaceDetectionModels, startFaceDetection])
+      video.removeEventListener("playing", handleVideoPlay);
+    };
+  }, [showCamera, previewPhoto, loadFaceDetectionModels, startFaceDetection]);
 
   // Convert base64 to File
   const dataURLtoFile = (dataurl: string, filename: string): File => {
-    const arr = dataurl.split(',')
-    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
-    const bstr = atob(arr[1])
-    let n = bstr.length
-    const u8arr = new Uint8Array(n)
+    const arr = dataurl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/jpeg";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
     while (n--) {
-      u8arr[n] = bstr.charCodeAt(n)
+      u8arr[n] = bstr.charCodeAt(n);
     }
-    return new File([u8arr], filename, { type: mime })
-  }
+    return new File([u8arr], filename, { type: mime });
+  };
 
   // Verify photo with API
-  const verifyPhoto = async (file: File): Promise<{ valid: boolean; message: string; reason?: string }> => {
+  const verifyPhoto = async (
+    file: File,
+  ): Promise<{ valid: boolean; message: string; reason?: string }> => {
     try {
       const formData = new FormData();
       formData.append("photo", file);
       // Wait for 10 minutes before making the API call
       // await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
+
+        //   setValidationToken("xxx")
+        //   return {
+        //   valid: true,
+        //   message:  "Photo validated successfully",
+        // };
 
       const response = await fetch(
         `${API_BASE_URL}/photo-validation/check_photo`,
@@ -513,9 +573,11 @@ function Input() {
         },
       );
 
+  
+
       if (response.status === 503) {
         // Groq overloaded & auto-disabled — re-check flag and skip validation
-        setPhotoValidationRequired(false)
+        setPhotoValidationRequired(false);
         return {
           valid: true,
           message: "Photo accepted (validation temporarily unavailable)",
@@ -526,7 +588,7 @@ function Input() {
 
       if (response.ok && data.valid) {
         if (data.validation_token) {
-          setValidationToken(data.validation_token)
+          setValidationToken(data.validation_token);
         }
         return {
           valid: true,
@@ -540,83 +602,84 @@ function Input() {
         };
       }
     } catch (error) {
-      console.error('Photo verification error:', error)
-      throw error
+      console.error("Photo verification error:", error);
+      throw error;
     }
-  }
+  };
 
   const capturePhoto = () => {
     if (videoRef.current) {
-      const canvas = document.createElement('canvas')
-      canvas.width = videoRef.current.videoWidth
-      canvas.height = videoRef.current.videoHeight
-      const ctx = canvas.getContext('2d')
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext("2d");
       if (ctx) {
         // Mirror the capture to match the mirrored live preview
-        ctx.translate(canvas.width, 0)
-        ctx.scale(-1, 1)
-        ctx.drawImage(videoRef.current, 0, 0)
-        const photoData = canvas.toDataURL('image/jpeg')
-        const file = dataURLtoFile(photoData, 'captured-photo.jpg')
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0);
+        const photoData = canvas.toDataURL("image/jpeg");
+        const file = dataURLtoFile(photoData, "captured-photo.jpg");
 
         // Stop face detection before removing the video element
         if (detectionIntervalRef.current) {
-          clearInterval(detectionIntervalRef.current)
-          detectionIntervalRef.current = null
+          clearInterval(detectionIntervalRef.current);
+          detectionIntervalRef.current = null;
         }
 
         // Show preview immediately
-        setPreviewPhoto(photoData)
-        setPreviewPhotoFile(file)
+        setPreviewPhoto(photoData);
+        setPreviewPhotoFile(file);
       }
     }
-  }
+  };
 
   const handleRetakePhoto = () => {
-    setPreviewPhoto(null)
-    setPreviewPhotoFile(null)
+    setPreviewPhoto(null);
+    setPreviewPhotoFile(null);
     // Face detection will restart via the useEffect when the video element re-renders
-  }
+  };
 
   const handleConfirmPhoto = async () => {
-    if (!previewPhoto || !previewPhotoFile) return
+    if (!previewPhoto || !previewPhotoFile) return;
 
     // Skip photo validation if admin turned it off
     if (!photoValidationRequired) {
-      setCapturedPhoto(previewPhoto)
-      setCapturedPhotoFile(previewPhotoFile)
-      setPreviewPhoto(null)
-      setPreviewPhotoFile(null)
-      closeCamera()
-      toast.success('Photo captured successfully!')
-      return
+      setCapturedPhoto(previewPhoto);
+      setCapturedPhotoFile(previewPhotoFile);
+      setPreviewPhoto(null);
+      setPreviewPhotoFile(null);
+      closeCamera();
+      toast.success("Photo captured successfully!");
+      return;
     }
 
-    setIsVerifyingPhoto(true)
+    setIsVerifyingPhoto(true);
     try {
-      const result = await verifyPhoto(previewPhotoFile)
+      const result = await verifyPhoto(previewPhotoFile);
 
       if (result.valid) {
-        setCapturedPhoto(previewPhoto)
-        setCapturedPhotoFile(previewPhotoFile)
-        setPreviewPhoto(null)
-        setPreviewPhotoFile(null)
-        closeCamera()
-        toast.success('Photo verified successfully!')
+        setCapturedPhoto(previewPhoto);
+        setCapturedPhotoFile(previewPhotoFile);
+        setPreviewPhoto(null);
+        setPreviewPhotoFile(null);
+        closeCamera();
+        toast.success("Photo verified successfully!");
       } else {
-        setPreviewPhoto(null)
-        setPreviewPhotoFile(null)
-        toast.error(`${result.message}${result.reason ? ` - ${result.reason}` : ''}`)
+        setPreviewPhoto(null);
+        setPreviewPhotoFile(null);
+        toast.error(
+          `${result.message}${result.reason ? ` - ${result.reason}` : ""}`,
+        );
       }
     } catch (error) {
-      setPreviewPhoto(null)
-      setPreviewPhotoFile(null)
-      toast.error('Photo verification failed. Please try again.')
+      setPreviewPhoto(null);
+      setPreviewPhotoFile(null);
+      toast.error("Photo verification failed. Please try again.");
     } finally {
-      setIsVerifyingPhoto(false)
+      setIsVerifyingPhoto(false);
     }
-  }
-
+  };
 
   return (
     <div className="min-h-svh flex flex-col max-w-sm mx-auto  relative">
@@ -745,7 +808,7 @@ function Input() {
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-              items={["Romantic", "Rock","Rap"]}
+              items={["Romantic", "Rock", "Rap"]}
               placeholder="What's your vibe?"
               value={vibe}
               onSelect={(item) => setVibe(item)}
@@ -898,20 +961,11 @@ function Input() {
 
         {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
         {showMobileInput && !showOtpScreen && (
-          <label
-            className={`flex items-start   gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+          <div
+            className={`flex flex-col items-start gap-2 self-stretch cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
           >
-            <input
-              type="checkbox"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 w-4 h-4 accent-black "
-            />
-            <span className="text-white text-[10px] font-normal">
-              &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions.
-              All submitted content (text & image) is subject to AI analysis and
-              manual review before video generation. This is valid for a limited
-              time period.&quot;{" "}
+            <span className="text-white text-[8px] sm:text-[10px] font-normal">
+              By participating in the Campaign, you understand and agree to the{" "}
               <a
                 id="link-terms"
                 href="/terms"
@@ -919,10 +973,57 @@ function Input() {
                 rel="noopener noreferrer"
                 className="underline"
               >
-                Link
-              </a>
+                T&C
+              </a>{" "}
+              of this service.
             </span>
-          </label>
+
+            <label
+              className={`flex items-start gap-2 self-stretch  cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+            >
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-black "
+              />
+
+              <span className="text-white text-[8px] sm:text-[10px] font-normal">
+                &quot;I consent to HUL & its partners processing my information
+                for creation of personalized AI generated videos for this
+                Campaign. &quot;{" "}
+              </span>
+            </label>
+
+            {/* abc */}
+
+            <label
+              className={`flex items-start   gap-2 self-stretch  cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+            >
+              <input
+                type="checkbox"
+                checked={agreedToMarketing}
+                onChange={(e) => setAgreedToMarketing(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-black "
+              />
+
+              <span className="text-white text-[8px] sm:text-[10px] font-normal">
+                &quot;I consent to receiving marketing communications (news,
+                offers, updates, etc.) and online advertising tailored to your
+                interests from trusted Unilever Brands via email, SMS, WhatsApp,
+                etc.&quot;{" "}
+                <a
+                  id="link-terms"
+                  href="https://www.unilevernotices.com/privacy-notices/india-english.html"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  Privacy Notice .
+                </a>{" "}
+              </span>
+            </label>
+          </div>
         )}
 
         {/* Button inside scroll area - animate from bottom */}
@@ -1205,4 +1306,4 @@ function Input() {
   );
 }
 
-export default Input
+export default Input;
