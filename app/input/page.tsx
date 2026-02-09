@@ -36,6 +36,7 @@ function Input() {
   const [otpTimer, setOtpTimer] = useState(0) // Countdown timer in seconds
   const [jobId, setJobId] = useState<number | null>(null)
   const [validationToken, setValidationToken] = useState<string | null>(null)
+  const [photoValidationRequired, setPhotoValidationRequired] = useState(true)
   const [isShortScreen, setIsShortScreen] = useState(false)
   const [isMiniScreen, setIsMiniScreen] = useState(false)
   const [pageLoaded, setPageLoaded] = useState(false)
@@ -44,6 +45,23 @@ function Input() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Check if photo validation is required (admin toggle)
+  useEffect(() => {
+    const checkPhotoValidation = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/settings/photo-validation-status`)
+        if (response.ok) {
+          const data = await response.json()
+          setPhotoValidationRequired(data.enabled)
+        }
+      } catch {
+        // Default to required if check fails
+        setPhotoValidationRequired(true)
+      }
+    }
+    checkPhotoValidation()
+  }, [])
 
   // Check screen height
   useEffect(() => {
@@ -487,11 +505,6 @@ function Input() {
       // Wait for 10 minutes before making the API call
       // await new Promise((resolve) => setTimeout(resolve, 10 * 60 * 1000));
 
-      //     return {
-      //   valid: true,
-      //   message: "Photo validated successfully",
-      // };
-
       const response = await fetch(
         `${API_BASE_URL}/photo-validation/check_photo`,
         {
@@ -500,11 +513,20 @@ function Input() {
         },
       );
 
+      if (response.status === 503) {
+        // Groq overloaded & auto-disabled — re-check flag and skip validation
+        setPhotoValidationRequired(false)
+        return {
+          valid: true,
+          message: "Photo accepted (validation temporarily unavailable)",
+        };
+      }
+
       const data = await response.json();
 
       if (response.ok && data.valid) {
         if (data.validation_token) {
-          setValidationToken(data.validation_token);
+          setValidationToken(data.validation_token)
         }
         return {
           valid: true,
@@ -558,6 +580,17 @@ function Input() {
 
   const handleConfirmPhoto = async () => {
     if (!previewPhoto || !previewPhotoFile) return
+
+    // Skip photo validation if admin turned it off
+    if (!photoValidationRequired) {
+      setCapturedPhoto(previewPhoto)
+      setCapturedPhotoFile(previewPhotoFile)
+      setPreviewPhoto(null)
+      setPreviewPhotoFile(null)
+      closeCamera()
+      toast.success('Photo captured successfully!')
+      return
+    }
 
     setIsVerifyingPhoto(true)
     try {
@@ -712,7 +745,7 @@ function Input() {
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-              items={["Romantic", "Rock", "Rap"]}
+              items={["Romantic", "Rock","Rap"]}
               placeholder="What's your vibe?"
               value={vibe}
               onSelect={(item) => setVibe(item)}
