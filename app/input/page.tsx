@@ -747,7 +747,7 @@ function Input() {
             onSelect={(item) => setVibe(item)}
           /> */}
             <Dropdown
-              items={["Romantic", "Rock","Rap"]}
+              items={["Romantic", "Rock", "Rap"]}
               placeholder="What's your vibe?"
               value={vibe}
               onSelect={(item) => setVibe(item)}
@@ -900,20 +900,37 @@ function Input() {
 
         {/* Terms checkbox - just above button when on mobile input screen (not OTP) */}
         {showMobileInput && !showOtpScreen && (
-          <label
-            className={`flex items-start   gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
-          >
-            <input
-              type="checkbox"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 w-4 h-4 accent-black "
-            />
-            <span className="text-white text-[10px] font-normal">
-              &quot;I consent to HUL &amp; its partners processing my information for creation of personalized AI generated videos for this Campaign.&quot;{" "}
-             
+          <>
+            <span className={`text-white text-[8px] sm:text-[10px] font-normal w-full max-w-[90%] px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}>
+              By participating in the Campaign, you understand and agree to the{" "}
+              <a
+                id="link-terms"
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                T&C
+              </a>{" "}
+              of this service.
             </span>
-          </label>
+
+            <label
+              className={`flex items-start gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+            >
+              <input
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 accent-black "
+              />
+              <span className="text-white text-[8px] sm:text-[10px] font-normal">
+                &quot;I consent to HUL &amp; its partners processing my
+                information for creation of personalized AI generated videos for
+                this Campaign.&quot;{" "}
+              </span>
+            </label>
+          </>
         )}
 
         {/* Marketing opt-in checkbox */}
@@ -927,16 +944,20 @@ function Input() {
               onChange={(e) => setMarketingOptIn(e.target.checked)}
               className="mt-1 w-4 h-4 accent-black"
             />
-            <span className="text-white text-[10px] font-normal">
-              &quot;I consent to receiving marketing communications (news, offers, updates, etc.) and online advertising tailored to your interests from trusted Unilever Brands via email, SMS, WhatsApp, etc.&quot;{" "}
+            <span className="text-white text-[8px] sm:text-[10px] font-normal">
+              &quot;I consent to receiving marketing communications (news,
+              offers, updates, etc.) and online advertising tailored to your
+              interests from trusted Unilever Brands via email, SMS, WhatsApp,
+              etc.&quot;{" "}
               <a
-                href="/terms"
+                id="link-privacy"
+                href="https://www.unilevernotices.com/privacy-notices/india-english.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
               >
-                Privacy Notice
-              </a>
+                Privacy Notice.
+              </a>{" "}
             </span>
           </label>
         )}
