@@ -112,7 +112,7 @@ function Input() {
   }
 
   const allFieldsFilled = loveAbout && relationship && vibe && voice
-  const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms && marketingOptIn
+  const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms
   const canSubmitOtp = otpCode.length === 6
 
   const handleNextClick = () => {
@@ -144,8 +144,8 @@ function Input() {
       toast.error('Please enter your 10-digit WhatsApp number')
       return
     }
-    if (!agreedToTerms || !marketingOptIn) {
-      toast.error('Please accept both consent checkboxes')
+    if (!agreedToTerms) {
+      toast.error('Please accept the terms and conditions')
       return
     }
 
@@ -159,8 +159,8 @@ function Input() {
       formData.append('relationship_status', relationship)
       formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
       formData.append('photo', capturedPhotoFile)
-      formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
-      formData.append('marketing_opt_in', marketingOptIn ? 'true' : 'false')
+      formData.append('terms_accepted', agreedToTerms ? '1' : '0')
+      formData.append('marketing_opt_in', marketingOptIn ? '1' : '0')
       formData.append('validation_token', validationToken || '')
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
