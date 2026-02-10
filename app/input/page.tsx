@@ -20,6 +20,7 @@ function Input() {
   const [showMobileInput, setShowMobileInput] = useState(false)
   const [mobileNumber, setMobileNumber] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [showCamera, setShowCamera] = useState(false)
   const [showPreCamera, setShowPreCamera] = useState(false)
   const [preCameraProgress, setPreCameraProgress] = useState(0)
@@ -111,7 +112,7 @@ function Input() {
   }
 
   const allFieldsFilled = loveAbout && relationship && vibe && voice
-  const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms
+  const canGetVerificationCode = capturedPhoto && mobileNumber.length === 10 && agreedToTerms && marketingOptIn
   const canSubmitOtp = otpCode.length === 6
 
   const handleNextClick = () => {
@@ -143,8 +144,8 @@ function Input() {
       toast.error('Please enter your 10-digit WhatsApp number')
       return
     }
-    if (!agreedToTerms) {
-      toast.error('Please accept the terms and conditions')
+    if (!agreedToTerms || !marketingOptIn) {
+      toast.error('Please accept both consent checkboxes')
       return
     }
 
@@ -159,6 +160,7 @@ function Input() {
       formData.append('vibe', vibe=== 'Rock' ? 'rock' : vibe === 'Rap' ? 'rap' : 'romantic')
       formData.append('photo', capturedPhotoFile)
       formData.append('terms_accepted', agreedToTerms ? 'true' : 'false')
+      formData.append('marketing_opt_in', marketingOptIn ? 'true' : 'false')
       formData.append('validation_token', validationToken || '')
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
@@ -908,18 +910,32 @@ function Input() {
               className="mt-1 w-4 h-4 accent-black "
             />
             <span className="text-white text-[10px] font-normal">
-              &quot;I agree to the HUL Legal Disclaimer and Terms & Conditions.
-              All submitted content (text & image) is subject to AI analysis and
-              manual review before video generation. This is valid for a limited
-              time period.&quot;{" "}
+              &quot;I consent to HUL &amp; its partners processing my information for creation of personalized AI generated videos for this Campaign.&quot;{" "}
+             
+            </span>
+          </label>
+        )}
+
+        {/* Marketing opt-in checkbox */}
+        {showMobileInput && !showOtpScreen && (
+          <label
+            className={`flex items-start gap-2 self-stretch mt-1 cursor-pointer px-3 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+          >
+            <input
+              type="checkbox"
+              checked={marketingOptIn}
+              onChange={(e) => setMarketingOptIn(e.target.checked)}
+              className="mt-1 w-4 h-4 accent-black"
+            />
+            <span className="text-white text-[10px] font-normal">
+              &quot;I consent to receiving marketing communications (news, offers, updates, etc.) and online advertising tailored to your interests from trusted Unilever Brands via email, SMS, WhatsApp, etc.&quot;{" "}
               <a
-                id="link-terms"
                 href="/terms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
               >
-                Link
+                Privacy Notice
               </a>
             </span>
           </label>
