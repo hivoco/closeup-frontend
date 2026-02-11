@@ -21,6 +21,9 @@ function Input() {
   const [mobileNumber, setMobileNumber] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [marketingOptIn, setMarketingOptIn] = useState(false)
+  const [utmSource, setUtmSource] = useState('')
+  const [utmMedium, setUtmMedium] = useState('')
+  const [utmCampaign, setUtmCampaign] = useState('')
   const [showCamera, setShowCamera] = useState(false)
   const [showPreCamera, setShowPreCamera] = useState(false)
   const [preCameraProgress, setPreCameraProgress] = useState(0)
@@ -46,6 +49,15 @@ function Input() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Read UTM params from URL on mount
+  useEffect(() => {
+    console.log("called")
+    const params = new URLSearchParams(window.location.search)
+    setUtmSource(params.get('utm_source') || '')
+    setUtmMedium(params.get('utm_medium') || '')
+    setUtmCampaign(params.get('utm_campaign') || '')
+  }, [])
 
   // Check if photo validation is required (admin toggle)
   useEffect(() => {
@@ -162,6 +174,9 @@ function Input() {
       formData.append('terms_accepted', agreedToTerms ? '1' : '0')
       formData.append('marketing_opt_in', marketingOptIn ? '1' : '0')
       formData.append('validation_token', validationToken || '')
+      formData.append('utm_source', utmSource)
+      formData.append('utm_medium', utmMedium)
+      formData.append('utm_campaign', utmCampaign)
 
       const response = await fetch(`${API_BASE_URL}/video/submit`, {
         method: 'POST',
