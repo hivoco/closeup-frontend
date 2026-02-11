@@ -44,7 +44,8 @@ function Home() {
   }, [])
 
   const handleStart = () => {
-    router.push('/input')
+    const params = window.location.search
+    router.push(`/input${params}`)
   }
 
   const animation =
