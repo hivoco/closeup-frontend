@@ -876,10 +876,11 @@ function Input() {
               </span>
 
               <div
-                className={`text-white text-xs leading-relaxed w-full  px-3 flex items-center gap-1 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+                className={`text-white  font-bold text-xs leading-relaxed w-full  px-3 flex items-center gap-1 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
               >
+                *Your verification code will be sent on{" "}
                 <img src="/whatsapp.png" alt="WhatsApp" className="w-4 h-4 " />
-                Look out for your OTP on WhatsApp
+                WhatsApp.{" "}
               </div>
             </div>
 
@@ -925,14 +926,15 @@ function Input() {
         {showMobileInput && !showOtpScreen && (
           <>
             <div
-              className={`text-white text-[8px] sm:text-[10px] font-normal w-full max-w-[90%] px-3 mb-3 flex items-center gap-1 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
+              className={`text-white text-[10px] font-bold w-full max-w-[90%] px-3 mb-3 flex items-center gap-1 transition-all duration-700 ease-out delay-300 ${pageLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-32"}`}
             >
+              *Your verification code will be sent on
               <img
                 src="/whatsapp.png"
                 alt="WhatsApp"
                 className="w-3 h-3 sm:w-4 sm:h-4"
               />
-              Look out for your OTP on WhatsApp
+              WhatsApp.{" "}
             </div>
 
             <span
