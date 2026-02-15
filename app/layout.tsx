@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import { GoogleTagManager } from "@next/third-parties/google";
 import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
+import ForceRedirect from "./force-redirect";
 
 const geologica = Geologica({
   variable: "--font-geologica",
@@ -73,6 +74,7 @@ export default function RootLayout({
     <html lang="en">
       <GoogleTagManager gtmId="GTM-NK2Q4ZM3" />
       <body className={`${geologica.className} antialiased`}>
+        <ForceRedirect />
         {children}
 
         <ToastContainer
